@@ -1,40 +1,17 @@
 "use client";
 import React, { useCallback, useEffect, useReducer, useRef, useState, useMemo } from "react";
-import {
-  ThemeProvider,
-  CssBaseline,
-  Box,
-  Typography,
-  Button,
-  TextField,
-  Divider,
-  Paper,
-  Stack,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Chip,
-  Tooltip,
-  Switch,
-  FormControlLabel,
-  Snackbar,
-  Alert
-} from "@mui/material";
+import { ThemeProvider, CssBaseline, Box, Snackbar, Alert } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import SendIcon from "@mui/icons-material/Send";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import DescriptionIcon from "@mui/icons-material/Description";
 import SettingsEthernetIcon from "@mui/icons-material/SettingsEthernet";
-import PendingIcon from "@mui/icons-material/Pending";
 import lightTheme from "../theme/light";
 import darkTheme from "../theme/dark";
 import { getToken, buildTokenRequest } from "../services/token";
 import Navbar from "../components/Navbar";
+import Sidenav from "../components/Sidenav";
 
 // ————————————————————————————————————————————
 // Minimal Next.js single-file page. Drop this into app/page.tsx
@@ -52,7 +29,7 @@ const API = {
   POLL_URL: "", // e.g. `${base}/poll/:id` or `${base}/poll` with body { id }
 };
 
-import { StepKey, StepState, WizardState, Action } from "../types";
+import { StepKey, WizardState, Action } from "../types";
 import StepIntro from "../components/steps/StepIntro";
 import StepToken from "../components/steps/StepToken";
 import StepUpload from "../components/steps/StepUpload";
@@ -97,13 +74,6 @@ function reducer(state: WizardState, action: Action): WizardState {
     case "GOTO":
       return { ...state, current: action.step };
   }
-}
-
-// —— Utility UI ——
-function StepBadge({ s }: { s: StepState["status"] }) {
-  const color = s === "success" ? "success" : s === "error" ? "error" : s === "running" ? "info" : "default";
-  const label = s[0].toUpperCase() + s.slice(1);
-  return <Chip size="small" color={color as any} label={label} />;
 }
 
 function useDelay() {
@@ -208,9 +178,22 @@ export default function Page() {
   const wait = useDelay();
   const poller = usePoller();
   const [snack, setSnack] = useState<string | null>(null);
-  const [mode, setMode] = useState<"light" | "dark">("light");
+  const [mode, setMode] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      return (
+        (localStorage.getItem("theme") as "light" | "dark") ||
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      );
+    }
+    return "light";
+  });
   const theme = useMemo(() => (mode === "light" ? lightTheme : darkTheme), [mode]);
   const toggleTheme = () => setMode((m) => (m === "light" ? "dark" : "light"));
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("theme", mode);
+    }
+  }, [mode]);
 
   const stepsOrder: { key: StepKey; label: string; icon: React.ReactNode }[] = [
     { key: "intro", label: "Intro", icon: <SettingsEthernetIcon /> },
@@ -367,56 +350,6 @@ export default function Page() {
     }
   }, [runToken, runUpload, runPrepareOrPrepareSend, runSendOnly, state.autoDelayMs, state.actionChoice, wait]);
 
-  // —— UI for left steps ——
-  const Sidebar = (
-    <Paper elevation={0} sx={{ p: 2, height: "100%" }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-        <Typography variant="subtitle1">Steps</Typography>
-        <Tooltip title="Run all steps automatically with delays"><span>
-          <Button size="small" variant="contained" startIcon={<PlayCircleIcon />} onClick={runAll} disabled={state.autoRun}>
-            Execute All
-          </Button>
-        </span></Tooltip>
-      </Stack>
-      <Box sx={{ mb: 1 }}>
-        <FormControlLabel
-          control={<Switch checked={state.simulate} onChange={(e) => dispatch({ type: "SET_FIELD", key: "simulate", value: e.target.checked })} />}
-          label="Simulate API"
-        />
-      </Box>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-        <TextField
-          label="Automation Delay (ms)"
-          type="number"
-          size="small"
-          value={state.autoDelayMs}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "autoDelayMs", value: Number(e.target.value) })}
-          fullWidth
-        />
-      </Stack>
-      <Divider sx={{ mb: 2 }} />
-      <List>
-        {stepsOrder.map(({ key, label, icon }) => {
-          const s = state.steps[key].status;
-          const ActiveIcon = s === "success" ? CheckCircleIcon : s === "running" ? PendingIcon : RadioButtonUncheckedIcon;
-          return (
-            <ListItem key={key} disablePadding>
-              <ListItemButton selected={state.current === key} onClick={() => go(key)}>
-                <ListItemIcon>{icon}</ListItemIcon>
-                <ListItemText
-                  primary={label}
-                  secondary={<StepBadge s={s} />}
-                  secondaryTypographyProps={{ component: "div" }}
-                />
-                <ActiveIcon fontSize="small" />
-              </ListItemButton>
-            </ListItem>
-          );
-        })}
-      </List>
-    </Paper>
-  );
-
   // —— Per-step content ——
   const Main = (
     <Box sx={{ p: 3, flex: 1, overflow: "auto" }}>
@@ -488,12 +421,14 @@ export default function Page() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Navbar mode={mode} toggleTheme={toggleTheme} />
-      <Box sx={{ height: "calc(100vh - 64px)", bgcolor: "background.default" }}>
-        <Stack direction={{ xs: "column", md: "row" }} sx={{ height: "100%" }}>
-          <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0 }}>{Sidebar}</Box>
+      <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
+        <Navbar mode={mode} toggleTheme={toggleTheme} />
+        <Box sx={{ flex: 1, display: "flex", overflow: "hidden" }}>
+          <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0, overflow: "auto" }}>
+            <Sidenav state={state} dispatch={dispatch} stepsOrder={stepsOrder} runAll={runAll} go={go} />
+          </Box>
           {Main}
-        </Stack>
+        </Box>
       </Box>
       <Snackbar open={!!snack} autoHideDuration={2000} onClose={() => setSnack(null)}>
         <Alert onClose={() => setSnack(null)} severity="info" sx={{ width: "100%" }}>

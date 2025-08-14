@@ -12,10 +12,15 @@ interface NavbarProps {
 
 export default function Navbar({ mode, toggleTheme }: NavbarProps) {
   return (
-    <AppBar position="static" color="default" elevation={0}>
+    <AppBar position="sticky" color="default" elevation={0}>
       <Toolbar>
         <Box sx={{ flexGrow: 1 }}>
-          <Image src="/file.svg" alt="Logo" width={32} height={32} />
+          <Image
+            src="https://az-cdn.selise.biz/selisecdn/cdn/signature/Selise%20signature%20new%20logo.svg"
+            alt="Logo"
+            width={120}
+            height={32}
+          />
         </Box>
         <IconButton onClick={toggleTheme}>
           {mode === "light" ? <DarkModeIcon /> : <LightModeIcon />}
