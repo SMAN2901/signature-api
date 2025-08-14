@@ -1,5 +1,7 @@
 import React from "react";
-import { Box, Paper, Typography } from "@mui/material";
+import { Paper, Typography } from "@mui/material";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export default function JsonBox({ label, data }: { label: string; data: any }) {
   return (
@@ -7,12 +9,14 @@ export default function JsonBox({ label, data }: { label: string; data: any }) {
       <Typography variant="subtitle2" gutterBottom>
         {label}
       </Typography>
-      <Box
-        component="pre"
-        sx={{ m: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 12 }}
+      <SyntaxHighlighter
+        language="json"
+        style={coldarkDark}
+        customStyle={{ margin: 0, fontSize: 12, wordBreak: "break-word" }}
+        wrapLongLines
       >
         {data ? JSON.stringify(data, null, 2) : "—"}
-      </Box>
+      </SyntaxHighlighter>
     </Paper>
   );
 }
