@@ -21,14 +21,26 @@ export default function StepToken({ state, dispatch, runToken, go }: Props) {
         <TextField
           label="Client ID"
           value={state.clientId}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "clientId", value: e.target.value })}
+          onChange={(e) => {
+            const v = e.target.value;
+            dispatch({ type: "SET_FIELD", key: "clientId", value: v });
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("clientId", v);
+            }
+          }}
           fullWidth
         />
         <TextField
           label="Client Secret"
           type="password"
           value={state.clientSecret}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "clientSecret", value: e.target.value })}
+          onChange={(e) => {
+            const v = e.target.value;
+            dispatch({ type: "SET_FIELD", key: "clientSecret", value: v });
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("clientSecret", v);
+            }
+          }}
           fullWidth
         />
       </Stack>
@@ -38,7 +50,7 @@ export default function StepToken({ state, dispatch, runToken, go }: Props) {
       </Stack>
       <JsonBox label="Request Payload" data={state.steps.token.request} />
       <JsonBox label="Response" data={state.steps.token.response} />
-      <JsonBox label="Error" data={state.steps.token.error} />
+      {s.error && <JsonBox label="Error" data={s.error} />}
       <Stack direction="row" spacing={2}>
         <Button variant="outlined" onClick={() => go("upload")}>Next</Button>
       </Stack>

@@ -60,7 +60,7 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
       </Stack>
       <JsonBox label="Request Payload" data={state.steps.prepare.request} />
       <JsonBox label="Response" data={state.steps.prepare.response} />
-      <JsonBox label="Error" data={state.steps.prepare.error} />
+      {state.steps.prepare.error && <JsonBox label="Error" data={state.steps.prepare.error} />}
       <PollingPanel polling={state.steps.prepare.polling} onStop={onStopPolling} />
       <Stack direction="row" spacing={2}>
         {state.actionChoice === "prepare" ? (
