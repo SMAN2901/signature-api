@@ -369,7 +369,7 @@ export default function Page() {
 
   // —— UI for left steps ——
   const Sidebar = (
-    <Paper elevation={0} sx={{ p: 2, height: "100%", borderRight: 1, borderColor: "divider" }}>
+    <Paper elevation={0} sx={{ p: 2, height: "100%" }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
         <Typography variant="subtitle1">Steps</Typography>
         <Tooltip title="Run all steps automatically with delays"><span>
