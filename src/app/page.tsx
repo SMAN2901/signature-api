@@ -32,6 +32,7 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import DescriptionIcon from "@mui/icons-material/Description";
 import SettingsEthernetIcon from "@mui/icons-material/SettingsEthernet";
 import PendingIcon from "@mui/icons-material/Pending";
+import { getToken, buildTokenRequest } from "../services/token";
 
 // ————————————————————————————————————————————
 // Minimal Next.js single-file page. Drop this into app/page.tsx
@@ -76,6 +77,7 @@ import StepDone from "../components/steps/StepDone";
 
 const initialState: WizardState = {
   current: "intro",
+  environment: (typeof window !== "undefined" && (localStorage.getItem("environment") as any)) || "development",
   clientId: "",
   clientSecret: "",
   token: undefined,
@@ -89,7 +91,7 @@ const initialState: WizardState = {
   simulate: true,
   steps: {
     intro: { status: "idle" },
-    token: { status: "idle", polling: { isActive: false, logs: [] } },
+    token: { status: "idle" },
     upload: { status: "idle", polling: { isActive: false, logs: [] } },
     prepare: { status: "idle", polling: { isActive: false, logs: [] } },
     send: { status: "idle", polling: { isActive: false, logs: [] } },
@@ -98,11 +100,6 @@ const initialState: WizardState = {
 };
 
 // —— Reducer ——
-
-type Action =
-  | { type: "SET_FIELD"; key: keyof WizardState; value: any }
-  | { type: "SET_STEP"; step: StepKey; patch: Partial<StepState> }
-  | { type: "GOTO"; step: StepKey };
 
 function reducer(state: WizardState, action: Action): WizardState {
   switch (action.type) {
@@ -247,29 +244,16 @@ export default function Page() {
     try {
       dispatch({ type: "SET_STEP", step: "token", patch: { status: "running", error: undefined } });
       const body = { client_id: state.clientId, client_secret: state.clientSecret, grant_type: "client_credentials" };
-      dispatch({ type: "SET_STEP", step: "token", patch: { request: { url: API.TOKEN_URL || "<TOKEN_URL>", body } } });
-      const data = state.simulate ? await mockCall("getToken", body) : await realFetch(API.TOKEN_URL, body);
+      const { url } = buildTokenRequest(state.clientId, state.clientSecret);
+      dispatch({ type: "SET_STEP", step: "token", patch: { request: { url, body } } });
+      const data = state.simulate ? await mockCall("getToken", body) : await getToken(state.clientId, state.clientSecret);
       dispatch({ type: "SET_FIELD", key: "token", value: data.access_token });
       dispatch({ type: "SET_STEP", step: "token", patch: { status: "success", response: data } });
-
-      // Example polling after token (optional — included per requirements)
-      const tickRef = { pct: 0 } as any;
-      dispatch({ type: "SET_STEP", step: "token", patch: { polling: { isActive: true, logs: [] } } });
-      await poller.start(
-        "token",
-        data.access_token,
-        (payload) => {
-          tickRef.pct = payload.progress;
-          dispatch({ type: "SET_STEP", step: "token", patch: { polling: { isActive: true, logs: [ ...(state.steps.token.polling?.logs || []), payload ], last: payload } } });
-        },
-        () => state.simulate ? mockCall("poll", { __pct: tickRef.pct }) : realFetch(API.POLL_URL, { token: data.access_token }),
-        (p) => p.status === "completed"
-      );
       setSnack("Token acquired.");
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "token", patch: { status: "error", error: String(e) } });
     }
-  }, [state.clientId, state.clientSecret, state.simulate, state.steps.token.polling, poller]);
+  }, [state.clientId, state.clientSecret, state.simulate]);
 
   const runUpload = useCallback(async () => {
     if (!state.file) {
@@ -456,15 +440,6 @@ export default function Page() {
           dispatch={dispatch}
           runToken={runToken}
           go={go}
-          onStopPolling={() => {
-            poller.stop("token");
-            const ps = state.steps.token.polling!;
-            dispatch({
-              type: "SET_STEP",
-              step: "token",
-              patch: { polling: { ...ps, isActive: false } },
-            });
-          }}
         />
       )}
       {state.current === "upload" && (

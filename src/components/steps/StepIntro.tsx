@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Stack, TextField, Typography } from "@mui/material";
+import { Button, Stack, Typography, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import { Action, WizardState } from "../../types";
 
@@ -14,24 +14,28 @@ export default function StepIntro({ state, dispatch, onGetStarted }: Props) {
     <Stack spacing={2}>
       <Typography variant="h5">API Testing Wizard</Typography>
       <Typography variant="body1">
-        Enter your client credentials to begin. Click <strong>Get Started</strong> to proceed. All data is kept in
-        memory only; reloading the page will reset the wizard.
+        Choose an environment and click <strong>Get Started</strong> to proceed. Client credentials will be entered in
+        the next step. All data is kept in memory only; reloading the page will reset the wizard.
       </Typography>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <TextField
-          label="Client ID"
-          value={state.clientId}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "clientId", value: e.target.value })}
-          fullWidth
-        />
-        <TextField
-          label="Client Secret"
-          type="password"
-          value={state.clientSecret}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "clientSecret", value: e.target.value })}
-          fullWidth
-        />
-      </Stack>
+      <FormControl fullWidth>
+        <InputLabel id="env-label">Environment</InputLabel>
+        <Select
+          labelId="env-label"
+          label="Environment"
+          value={state.environment}
+          onChange={(e) => {
+            const env = e.target.value as typeof state.environment;
+            dispatch({ type: "SET_FIELD", key: "environment", value: env });
+            if (typeof window !== "undefined") {
+              localStorage.setItem("environment", env);
+            }
+          }}
+        >
+          <MenuItem value="development">Development</MenuItem>
+          <MenuItem value="staging">Staging</MenuItem>
+          <MenuItem value="production">Production</MenuItem>
+        </Select>
+      </FormControl>
       <Stack direction="row" spacing={2}>
         <Button variant="contained" onClick={onGetStarted} endIcon={<PlayCircleIcon />}>Get Started</Button>
       </Stack>
