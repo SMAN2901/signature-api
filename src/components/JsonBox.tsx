@@ -5,7 +5,7 @@ import { coldarkDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 export default function JsonBox({ label, data }: { label: string; data: any }) {
   return (
-    <Paper variant="outlined" sx={{ p: 2, bgcolor: "grey.50" }}>
+    <Paper variant="outlined" sx={{ p: 2 }}>
       <Typography variant="subtitle2" gutterBottom>
         {label}
       </Typography>
