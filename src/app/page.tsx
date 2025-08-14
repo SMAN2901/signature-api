@@ -1,11 +1,10 @@
 "use client";
-import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import {
   ThemeProvider,
   createTheme,
   CssBaseline,
   Box,
-  Container,
   Typography,
   Button,
   TextField,
@@ -19,14 +18,8 @@ import {
   ListItemText,
   Chip,
   Tooltip,
-  IconButton,
   Switch,
   FormControlLabel,
-  LinearProgress,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
   Snackbar,
   Alert
 } from "@mui/material";
@@ -39,7 +32,6 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import DescriptionIcon from "@mui/icons-material/Description";
 import SettingsEthernetIcon from "@mui/icons-material/SettingsEthernet";
 import PendingIcon from "@mui/icons-material/Pending";
-import StopIcon from "@mui/icons-material/Stop";
 
 // ————————————————————————————————————————————
 // Minimal Next.js single-file page. Drop this into app/page.tsx
@@ -74,43 +66,13 @@ const theme = createTheme({
   shape: { borderRadius: 16 },
 });
 
-// —— Types ——
-
-type StepKey =
-  | "intro"
-  | "token"
-  | "upload"
-  | "prepare"
-  | "send"
-  | "done";
-
-interface StepState {
-  status: "idle" | "running" | "success" | "error";
-  request?: any;
-  response?: any;
-  error?: any;
-  polling?: {
-    isActive: boolean;
-    logs: any[];
-    last?: any;
-  };
-}
-
-interface WizardState {
-  current: StepKey;
-  clientId: string;
-  clientSecret: string;
-  token?: string;
-  file?: File | null;
-  fileName?: string;
-  processId?: string; // generic id returned by API to poll
-  emails: string;
-  actionChoice: "prepare" | "prepare_send";
-  autoRun: boolean;
-  autoDelayMs: number;
-  simulate: boolean; // use mock APIs by default
-  steps: Record<StepKey, StepState>;
-}
+import { StepKey, StepState, WizardState, Action } from "../types";
+import StepIntro from "../components/steps/StepIntro";
+import StepToken from "../components/steps/StepToken";
+import StepUpload from "../components/steps/StepUpload";
+import StepPrepare from "../components/steps/StepPrepare";
+import StepSend from "../components/steps/StepSend";
+import StepDone from "../components/steps/StepDone";
 
 const initialState: WizardState = {
   current: "intro",
@@ -156,17 +118,6 @@ function reducer(state: WizardState, action: Action): WizardState {
 }
 
 // —— Utility UI ——
-function JsonBox({ label, data }: { label: string; data: any }) {
-  return (
-    <Paper variant="outlined" sx={{ p: 2, bgcolor: "grey.50" }}>
-      <Typography variant="subtitle2" gutterBottom>{label}</Typography>
-      <Box component="pre" sx={{ m: 0, whiteSpace: "pre-wrap", wordBreak: "break-word", fontSize: 12 }}>
-        {data ? JSON.stringify(data, null, 2) : "—"}
-      </Box>
-    </Paper>
-  );
-}
-
 function StepBadge({ s }: { s: StepState["status"] }) {
   const color = s === "success" ? "success" : s === "error" ? "error" : s === "running" ? "info" : "default";
   const label = s[0].toUpperCase() + s.slice(1);
@@ -490,215 +441,95 @@ export default function Page() {
   );
 
   // —— Per-step content ——
-  function StepIntro() {
-    return (
-      <Stack spacing={2}>
-        <Typography variant="h5">API Testing Wizard</Typography>
-        <Typography variant="body1">
-          Enter your client credentials to begin. Click <strong>Get Started</strong> to proceed. All data is kept in
-          memory only; reloading the page will reset the wizard.
-        </Typography>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <TextField label="Client ID" value={state.clientId} onChange={(e) => dispatch({ type: "SET_FIELD", key: "clientId", value: e.target.value })} fullWidth />
-          <TextField label="Client Secret" type="password" value={state.clientSecret} onChange={(e) => dispatch({ type: "SET_FIELD", key: "clientSecret", value: e.target.value })} fullWidth />
-        </Stack>
-        <Stack direction="row" spacing={2}>
-          <Button variant="contained" onClick={handleGetStarted} endIcon={<PlayCircleIcon />}>Get Started</Button>
-        </Stack>
-      </Stack>
-    );
-  }
-
-  function PollingPanel({ step }: { step: StepKey }) {
-    const ps = state.steps[step].polling;
-    if (!ps) return null;
-    return (
-      <Paper variant="outlined" sx={{ p: 2 }}>
-        <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 1 }}>
-          <Typography variant="subtitle2">Polling</Typography>
-          {ps.last?.progress != null && (
-            <Box sx={{ flex: 1 }}>
-              <LinearProgress variant="determinate" value={Math.min(100, ps.last.progress)} />
-            </Box>
-          )}
-          <Tooltip title="Stop polling for this step"><span>
-            <IconButton size="small" onClick={() => poller.stop(step)}><StopIcon /></IconButton>
-          </span></Tooltip>
-        </Stack>
-        <JsonBox label="Latest" data={ps.last} />
-        <Box sx={{ maxHeight: 160, overflow: "auto", mt: 1 }}>
-          <Typography variant="caption" sx={{ mb: 0.5, display: "block" }}>Logs</Typography>
-          {(ps.logs || []).slice().reverse().map((row, i) => (
-            <Box key={i} component="pre" sx={{ m: 0, p: 1, bgcolor: "grey.50", borderRadius: 1, fontSize: 12 }}>
-              {JSON.stringify(row, null, 2)}
-            </Box>
-          ))}
-        </Box>
-      </Paper>
-    );
-  }
-
-  function StepToken() {
-    const s = state.steps.token;
-    return (
-      <Stack spacing={2}>
-        <Typography variant="h6">Step 2 — Get Token</Typography>
-        <Typography variant="body2">Make an API call using the client credentials to obtain an access token.</Typography>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <TextField label="Client ID" value={state.clientId} onChange={(e) => dispatch({ type: "SET_FIELD", key: "clientId", value: e.target.value })} fullWidth />
-          <TextField label="Client Secret" type="password" value={state.clientSecret} onChange={(e) => dispatch({ type: "SET_FIELD", key: "clientSecret", value: e.target.value })} fullWidth />
-        </Stack>
-        <Stack direction="row" spacing={2}>
-          <Button variant="contained" onClick={runToken} disabled={s.status === "running"} startIcon={<LockOpenIcon />}>Get Token</Button>
-          {state.token && <Chip label="Token ready" color="success" />}
-        </Stack>
-        <JsonBox label="Request Payload" data={state.steps.token.request} />
-        <JsonBox label="Response" data={state.steps.token.response} />
-        <JsonBox label="Error" data={state.steps.token.error} />
-        <PollingPanel step="token" />
-        <Stack direction="row" spacing={2}>
-          <Button variant="outlined" onClick={() => go("upload")}>Next</Button>
-        </Stack>
-      </Stack>
-    );
-  }
-
-  function StepUpload() {
-    const s = state.steps.upload;
-    return (
-      <Stack spacing={2}>
-        <Typography variant="h6">Step 3 — Upload File</Typography>
-        <Typography variant="body2">Select a single PDF and upload it.</Typography>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-          <Button component="label" variant="contained" startIcon={<CloudUploadIcon />}>Choose PDF
-            <input
-              type="file"
-              accept="application/pdf"
-              hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0] || null;
-                dispatch({ type: "SET_FIELD", key: "file", value: f });
-                dispatch({ type: "SET_FIELD", key: "fileName", value: f?.name || undefined });
-              }}
-            />
-          </Button>
-          <TextField label="Selected file" value={state.fileName || "(none)"} InputProps={{ readOnly: true }} fullWidth />
-        </Stack>
-        <Stack direction="row" spacing={2}>
-          <Button variant="contained" onClick={runUpload} disabled={s.status === "running" || !state.file}>Upload</Button>
-        </Stack>
-        <JsonBox label="Request Payload" data={state.steps.upload.request} />
-        <JsonBox label="Response" data={state.steps.upload.response} />
-        <JsonBox label="Error" data={state.steps.upload.error} />
-        <PollingPanel step="upload" />
-        <Stack direction="row" spacing={2}>
-          <Button variant="outlined" onClick={() => go("prepare")}>Next</Button>
-        </Stack>
-      </Stack>
-    );
-  }
-
-  function StepPrepare() {
-    const s = state.steps.prepare;
-    return (
-      <Stack spacing={2}>
-        <Typography variant="h6">Step 4 — Prepare / Prepare and Send</Typography>
-        <Typography variant="body2">Choose an action and provide a list of recipient emails (comma-separated). If you choose <em>Prepare and Send</em>, Step 5 will be skipped.</Typography>
-        <FormControl fullWidth>
-          <InputLabel id="action-label">Action</InputLabel>
-          <Select
-            labelId="action-label"
-            label="Action"
-            value={state.actionChoice}
-            onChange={(e) => dispatch({ type: "SET_FIELD", key: "actionChoice", value: e.target.value })}
-          >
-            <MenuItem value="prepare">Prepare Contract</MenuItem>
-            <MenuItem value="prepare_send">Prepare and Send Contract</MenuItem>
-          </Select>
-        </FormControl>
-        <TextField
-          label="Emails (comma-separated)"
-          placeholder="a@x.com, b@y.com"
-          value={state.emails}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "emails", value: e.target.value })}
-          fullWidth
-        />
-        <Stack direction="row" spacing={2}>
-          <Button variant="contained" onClick={runPrepareOrPrepareSend} disabled={s.status === "running" || !state.steps.upload.response}>Run</Button>
-        </Stack>
-        <JsonBox label="Request Payload" data={state.steps.prepare.request} />
-        <JsonBox label="Response" data={state.steps.prepare.response} />
-        <JsonBox label="Error" data={state.steps.prepare.error} />
-        <PollingPanel step="prepare" />
-        <Stack direction="row" spacing={2}>
-          {state.actionChoice === "prepare" ? (
-            <Button variant="outlined" onClick={() => go("send")}>Next</Button>
-          ) : (
-            <Button variant="outlined" onClick={() => go("done")}>Next</Button>
-          )}
-        </Stack>
-      </Stack>
-    );
-  }
-
-  function StepSend() {
-    const s = state.steps.send;
-    return (
-      <Stack spacing={2}>
-        <Typography variant="h6">Step 5 — Send Contract</Typography>
-        <Typography variant="body2">If you prepared the contract in Step 4, send it now.</Typography>
-        <Stack direction="row" spacing={2}>
-          <Button variant="contained" onClick={runSendOnly} disabled={s.status === "running" || !state.processId} startIcon={<SendIcon />}>Send Contract</Button>
-        </Stack>
-        <JsonBox label="Request Payload" data={state.steps.send.request} />
-        <JsonBox label="Response" data={state.steps.send.response} />
-        <JsonBox label="Error" data={state.steps.send.error} />
-        <PollingPanel step="send" />
-        <Stack direction="row" spacing={2}>
-          <Button variant="outlined" onClick={() => go("done")}>Next</Button>
-        </Stack>
-      </Stack>
-    );
-  }
-
-  function StepDone() {
-    const message = state.actionChoice === "prepare" ? "Contract is sent via email." : "Contract prepared and sent via email.";
-    return (
-      <Stack spacing={2}>
-        <Typography variant="h5">Step 6 — Complete</Typography>
-        <Alert severity="success">{message}</Alert>
-        <Typography variant="body2">You can go back to any step on the left to review payloads and polling responses. Reloading the page will reset everything.</Typography>
-      </Stack>
-    );
-  }
-
   const Main = (
-    <Box sx={{ p: 3 }}>
-      {state.current === "intro" && <StepIntro />}
-      {state.current === "token" && <StepToken />}
-      {state.current === "upload" && <StepUpload />}
-      {state.current === "prepare" && <StepPrepare />}
-      {state.current === "send" && <StepSend />}
-      {state.current === "done" && <StepDone />}
+    <Box sx={{ p: 3, flex: 1, overflow: "auto" }}>
+      {state.current === "intro" && (
+        <StepIntro state={state} dispatch={dispatch} onGetStarted={handleGetStarted} />
+      )}
+      {state.current === "token" && (
+        <StepToken
+          state={state}
+          dispatch={dispatch}
+          runToken={runToken}
+          go={go}
+          onStopPolling={() => {
+            poller.stop("token");
+            const ps = state.steps.token.polling!;
+            dispatch({
+              type: "SET_STEP",
+              step: "token",
+              patch: { polling: { ...ps, isActive: false } },
+            });
+          }}
+        />
+      )}
+      {state.current === "upload" && (
+        <StepUpload
+          state={state}
+          dispatch={dispatch}
+          runUpload={runUpload}
+          go={go}
+          onStopPolling={() => {
+            poller.stop("upload");
+            const ps = state.steps.upload.polling!;
+            dispatch({
+              type: "SET_STEP",
+              step: "upload",
+              patch: { polling: { ...ps, isActive: false } },
+            });
+          }}
+        />
+      )}
+      {state.current === "prepare" && (
+        <StepPrepare
+          state={state}
+          dispatch={dispatch}
+          runPrepareOrPrepareSend={runPrepareOrPrepareSend}
+          go={go}
+          onStopPolling={() => {
+            poller.stop("prepare");
+            const ps = state.steps.prepare.polling!;
+            dispatch({
+              type: "SET_STEP",
+              step: "prepare",
+              patch: { polling: { ...ps, isActive: false } },
+            });
+          }}
+        />
+      )}
+      {state.current === "send" && (
+        <StepSend
+          state={state}
+          runSendOnly={runSendOnly}
+          go={go}
+          onStopPolling={() => {
+            poller.stop("send");
+            const ps = state.steps.send.polling!;
+            dispatch({
+              type: "SET_STEP",
+              step: "send",
+              patch: { polling: { ...ps, isActive: false } },
+            });
+          }}
+        />
+      )}
+      {state.current === "done" && <StepDone state={state} />}
     </Box>
   );
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
-        <Container maxWidth="lg" sx={{ py: 4 }}>
-          <Paper elevation={2} sx={{ overflow: "hidden", borderRadius: 4 }}>
-            <Stack direction={{ xs: "column", md: "row" }} sx={{ minHeight: 560 }}>
-              <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0 }}>{Sidebar}</Box>
-              <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", md: "block" } }} />
-              <Box sx={{ flex: 1 }}>{Main}</Box>
-            </Stack>
-          </Paper>
-        </Container>
+      <Box sx={{ height: "100vh", bgcolor: "background.default" }}>
+        <Stack direction={{ xs: "column", md: "row" }} sx={{ height: "100%" }}>
+          <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0 }}>{Sidebar}</Box>
+          {Main}
+        </Stack>
       </Box>
       <Snackbar open={!!snack} autoHideDuration={2000} onClose={() => setSnack(null)}>
-        <Alert onClose={() => setSnack(null)} severity="info" sx={{ width: "100%" }}>{snack}</Alert>
+        <Alert onClose={() => setSnack(null)} severity="info" sx={{ width: "100%" }}>
+          {snack}
+        </Alert>
       </Snackbar>
     </ThemeProvider>
   );
