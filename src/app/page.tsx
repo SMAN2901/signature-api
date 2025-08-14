@@ -430,7 +430,11 @@ export default function Page() {
             <ListItem key={key} disablePadding>
               <ListItemButton selected={state.current === key} onClick={() => go(key)}>
                 <ListItemIcon>{icon}</ListItemIcon>
-                <ListItemText primary={label} secondary={<StepBadge s={s} />} />
+                <ListItemText
+                  primary={label}
+                  secondary={<StepBadge s={s} />}
+                  secondaryTypographyProps={{ component: "div" }}
+                />
                 <ActiveIcon fontSize="small" />
               </ListItemButton>
             </ListItem>
