@@ -1,8 +1,7 @@
 "use client";
-import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState, useMemo } from "react";
 import {
   ThemeProvider,
-  createTheme,
   CssBaseline,
   Box,
   Typography,
@@ -32,7 +31,10 @@ import LockOpenIcon from "@mui/icons-material/LockOpen";
 import DescriptionIcon from "@mui/icons-material/Description";
 import SettingsEthernetIcon from "@mui/icons-material/SettingsEthernet";
 import PendingIcon from "@mui/icons-material/Pending";
+import lightTheme from "../theme/light";
+import darkTheme from "../theme/dark";
 import { getToken, buildTokenRequest } from "../services/token";
+import Navbar from "../components/Navbar";
 
 // ————————————————————————————————————————————
 // Minimal Next.js single-file page. Drop this into app/page.tsx
@@ -50,23 +52,6 @@ const API = {
   POLL_URL: "", // e.g. `${base}/poll/:id` or `${base}/poll` with body { id }
 };
 
-// —— Theme ——
-const theme = createTheme({
-  palette: {
-    mode: "light",
-    primary: {
-      main: "#0ea5e9",
-    },
-    secondary: {
-      main: "#8b5cf6",
-    },
-    success: {
-      main: "#22c55e",
-    },
-  },
-  shape: { borderRadius: 16 },
-});
-
 import { StepKey, StepState, WizardState, Action } from "../types";
 import StepIntro from "../components/steps/StepIntro";
 import StepToken from "../components/steps/StepToken";
@@ -78,8 +63,8 @@ import StepDone from "../components/steps/StepDone";
 const initialState: WizardState = {
   current: "intro",
   environment: (typeof window !== "undefined" && (localStorage.getItem("environment") as any)) || "development",
-  clientId: "",
-  clientSecret: "",
+  clientId: (typeof window !== "undefined" && sessionStorage.getItem("clientId")) || "",
+  clientSecret: (typeof window !== "undefined" && sessionStorage.getItem("clientSecret")) || "",
   token: undefined,
   file: null,
   fileName: undefined,
@@ -223,6 +208,9 @@ export default function Page() {
   const wait = useDelay();
   const poller = usePoller();
   const [snack, setSnack] = useState<string | null>(null);
+  const [mode, setMode] = useState<"light" | "dark">("light");
+  const theme = useMemo(() => (mode === "light" ? lightTheme : darkTheme), [mode]);
+  const toggleTheme = () => setMode((m) => (m === "light" ? "dark" : "light"));
 
   const stepsOrder: { key: StepKey; label: string; icon: React.ReactNode }[] = [
     { key: "intro", label: "Intro", icon: <SettingsEthernetIcon /> },
@@ -237,6 +225,7 @@ export default function Page() {
 
   // —— Handlers per step ——
   const handleGetStarted = async () => {
+    dispatch({ type: "SET_STEP", step: "intro", patch: { status: "success" } });
     go("token");
   };
 
@@ -499,7 +488,8 @@ export default function Page() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ height: "100vh", bgcolor: "background.default" }}>
+      <Navbar mode={mode} toggleTheme={toggleTheme} />
+      <Box sx={{ height: "calc(100vh - 64px)", bgcolor: "background.default" }}>
         <Stack direction={{ xs: "column", md: "row" }} sx={{ height: "100%" }}>
           <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0 }}>{Sidebar}</Box>
           {Main}
