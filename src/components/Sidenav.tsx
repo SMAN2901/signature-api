@@ -93,7 +93,7 @@ export default function Sidenav({ state, dispatch, stepsOrder, runAll, go }: Sid
               : "text.disabled";
           return (
             <ListItem key={key} disablePadding>
-              <ListItemButton selected={state.current === key} onClick={() => go(key)}>
+              <ListItemButton selected={state.current === key} onClick={() => go(key)} sx={{ borderRadius: 1 }}>
                 <ListItemIcon>{icon}</ListItemIcon>
                 <ListItemText primary={label} />
                 <ActiveIcon fontSize="small" sx={{ color }} />

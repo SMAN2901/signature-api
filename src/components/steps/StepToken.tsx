@@ -48,7 +48,7 @@ export default function StepToken({ state, dispatch, runToken, go }: Props) {
         <Button variant="contained" onClick={runToken} disabled={s.status === "running"} startIcon={<LockOpenIcon />}>Get Token</Button>
         {state.token && <Chip label="Token ready" color="success" />}
       </Stack>
-      <JsonBox label="Request Payload" data={state.steps.token.request} />
+      <JsonBox label="Request" data={state.steps.token.request} />
       <JsonBox label="Response" data={state.steps.token.response} />
       {s.error && <JsonBox label="Error" data={s.error} />}
       <Stack direction="row" spacing={2}>

@@ -13,7 +13,7 @@ const SyntaxHighlighter = dynamic(
 );
 
 export default function JsonBox({ label, data }: { label: string; data: any }) {
-  const [wrap, setWrap] = React.useState(true);
+  const [wrap, setWrap] = React.useState(false);
   const json = data ? JSON.stringify(data, null, 2) : "";
 
   const handleCopy = () => {

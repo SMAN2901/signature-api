@@ -37,7 +37,7 @@ export default function StepUpload({ state, dispatch, runUpload, go, onStopPolli
       <Stack direction="row" spacing={2}>
         <Button variant="contained" onClick={runUpload} disabled={s.status === "running" || !state.file}>Upload</Button>
       </Stack>
-      <JsonBox label="Request Payload" data={state.steps.upload.request} />
+      <JsonBox label="Request" data={state.steps.upload.request} />
       <JsonBox label="Response" data={state.steps.upload.response} />
       {state.steps.upload.error && <JsonBox label="Error" data={state.steps.upload.error} />}
       <PollingPanel polling={state.steps.upload.polling} onStop={onStopPolling} />

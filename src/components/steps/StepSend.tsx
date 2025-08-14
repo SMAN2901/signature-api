@@ -28,7 +28,7 @@ export default function StepSend({ state, runSendOnly, go, onStopPolling }: Prop
           Send Contract
         </Button>
       </Stack>
-      <JsonBox label="Request Payload" data={state.steps.send.request} />
+      <JsonBox label="Request" data={state.steps.send.request} />
       <JsonBox label="Response" data={state.steps.send.response} />
       {state.steps.send.error && <JsonBox label="Error" data={state.steps.send.error} />}
       <PollingPanel polling={state.steps.send.polling} onStop={onStopPolling} />
