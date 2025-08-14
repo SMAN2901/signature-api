@@ -20,6 +20,7 @@ export interface StepState {
 
 export interface WizardState {
   current: StepKey;
+  environment: "development" | "staging" | "production";
   clientId: string;
   clientSecret: string;
   token?: string;
