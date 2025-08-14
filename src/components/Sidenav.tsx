@@ -15,13 +15,13 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Chip,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import PendingIcon from "@mui/icons-material/Pending";
+import ErrorIcon from "@mui/icons-material/Error";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
-import { WizardState, Action, StepKey, StepState } from "../types";
+import { WizardState, Action, StepKey } from "../types";
 
 interface SidenavProps {
   state: WizardState;
@@ -29,13 +29,6 @@ interface SidenavProps {
   stepsOrder: { key: StepKey; label: string; icon: React.ReactNode }[];
   runAll: () => Promise<void>;
   go: (step: StepKey) => void;
-}
-
-function StepBadge({ s }: { s: StepState["status"] }) {
-  const color =
-    s === "success" ? "success" : s === "error" ? "error" : s === "running" ? "info" : "default";
-  const label = s[0].toUpperCase() + s.slice(1);
-  return <Chip size="small" color={color as any} label={label} />;
 }
 
 export default function Sidenav({ state, dispatch, stepsOrder, runAll, go }: SidenavProps) {
@@ -83,17 +76,27 @@ export default function Sidenav({ state, dispatch, stepsOrder, runAll, go }: Sid
         {stepsOrder.map(({ key, label, icon }) => {
           const s = state.steps[key].status;
           const ActiveIcon =
-            s === "success" ? CheckCircleIcon : s === "running" ? PendingIcon : RadioButtonUncheckedIcon;
+            s === "success"
+              ? CheckCircleIcon
+              : s === "error"
+              ? ErrorIcon
+              : s === "running"
+              ? PendingIcon
+              : RadioButtonUncheckedIcon;
+          const color =
+            s === "success"
+              ? "success.main"
+              : s === "error"
+              ? "error.main"
+              : s === "running"
+              ? "info.main"
+              : "text.disabled";
           return (
             <ListItem key={key} disablePadding>
               <ListItemButton selected={state.current === key} onClick={() => go(key)}>
                 <ListItemIcon>{icon}</ListItemIcon>
-                <ListItemText
-                  primary={label}
-                  secondary={<StepBadge s={s} />}
-                  secondaryTypographyProps={{ component: "div" }}
-                />
-                <ActiveIcon fontSize="small" />
+                <ListItemText primary={label} />
+                <ActiveIcon fontSize="small" sx={{ color }} />
               </ListItemButton>
             </ListItem>
           );

@@ -180,10 +180,11 @@ export default function Page() {
   const [snack, setSnack] = useState<string | null>(null);
   const [mode, setMode] = useState<"light" | "dark">(() => {
     if (typeof window !== "undefined") {
-      return (
+      const stored =
         (localStorage.getItem("theme") as "light" | "dark") ||
-        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-      );
+        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      document.body.dataset.theme = stored;
+      return stored;
     }
     return "light";
   });
@@ -192,6 +193,7 @@ export default function Page() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("theme", mode);
+      document.body.dataset.theme = mode;
     }
   }, [mode]);
 

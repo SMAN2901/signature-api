@@ -1,5 +1,12 @@
 * {
   scrollbar-width: thin;
+}
+
+[data-theme="light"] * {
+  scrollbar-color: #00000059 transparent;
+}
+
+[data-theme="dark"] * {
   scrollbar-color: #ffffff59 transparent;
 }
 
@@ -9,8 +16,15 @@
 }
 
 *::-webkit-scrollbar-thumb {
-  background-color: #ffffff59;
   border-radius: 8px;
+}
+
+[data-theme="light"] *::-webkit-scrollbar-thumb {
+  background-color: #00000059;
+}
+
+[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background-color: #ffffff59;
 }
 
 *::-webkit-scrollbar-track {
