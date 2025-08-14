@@ -12,7 +12,7 @@ interface NavbarProps {
 
 export default function Navbar({ mode, toggleTheme }: NavbarProps) {
   return (
-    <AppBar position="sticky" color="default" elevation={0}>
+    <AppBar position="sticky" color="default" elevation={1}>
       <Toolbar>
         <Box sx={{ flexGrow: 1 }}>
           <Image

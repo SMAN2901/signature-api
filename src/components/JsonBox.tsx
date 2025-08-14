@@ -16,8 +16,8 @@ export default function JsonBox({ label, data }: { label: string; data: any }) {
   };
 
   return (
-    <Paper variant="elevation" elevation={0}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center">
+    <Paper variant="elevation" elevation={0} style={{ backgroundColor: "transparent"}}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 1 }}>
         <Typography variant="subtitle2" gutterBottom>
           {label}
         </Typography>
