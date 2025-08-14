@@ -6,6 +6,7 @@ export type Environment = "development" | "staging" | "production";
 
 export interface EnvConfig {
   baseUrl: string;
+  tokenApi: string;
 }
 
 const configs: Record<Environment, EnvConfig> = {

@@ -2,8 +2,8 @@ import axios from "axios";
 import { getEnv } from "../env";
 
 export function buildTokenRequest(clientId: string, clientSecret: string) {
-  const { baseUrl } = getEnv();
-  const url = `${baseUrl}/api/identity/v25/identity/token`;
+  const { baseUrl, tokenApi } = getEnv();
+  const url = `${baseUrl}/${tokenApi}`;
   const body = {
     grant_type: "client_credentials",
     client_id: clientId,
