@@ -10,13 +10,13 @@ export default function JsonBox({ label, data }: { label: string; data: any }) {
   const json = data ? JSON.stringify(data, null, 2) : "";
 
   const handleCopy = () => {
-    if (json && typeof navigator !== "undefined") {
-      navigator.clipboard.writeText(json);
+    if (json && typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(json).catch(() => {});
     }
   };
 
   return (
-    <Paper variant="elevation" elevation={0} style={{ backgroundColor: "transparent"}}>
+    <Paper variant="elevation" elevation={0} style={{ backgroundColor: "transparent" }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ py: 1 }}>
         <Typography variant="subtitle2" gutterBottom>
           {label}
@@ -33,7 +33,13 @@ export default function JsonBox({ label, data }: { label: string; data: any }) {
       <SyntaxHighlighter
         language="json"
         style={coldarkDark}
-        customStyle={{ margin: 0, fontSize: 16, wordBreak: "break-word", borderRadius: 16 }}
+        customStyle={{
+          margin: 0,
+          fontSize: 16,
+          borderRadius: 16,
+          wordBreak: "break-word",
+          whiteSpace: wrap ? "pre-wrap" : "pre",
+        }}
         wrapLongLines={wrap}
       >
         {json || "—"}
