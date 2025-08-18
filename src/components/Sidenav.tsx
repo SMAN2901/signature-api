@@ -6,8 +6,6 @@ import {
   Typography,
   Button,
   Tooltip,
-  Switch,
-  FormControlLabel,
   TextField,
   Divider,
   List,
@@ -49,17 +47,6 @@ export default function Sidenav({ state, dispatch, stepsOrder, runAll, go }: Sid
             </Button>
           </span>
         </Tooltip>
-      </Stack>
-      <Stack direction="row" alignItems="center" sx={{ mb: 1 }}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={state.simulate}
-              onChange={(e) => dispatch({ type: "SET_FIELD", key: "simulate", value: e.target.checked })}
-            />
-          }
-          label="Simulate API"
-        />
       </Stack>
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
         <TextField

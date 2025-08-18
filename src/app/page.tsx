@@ -37,9 +37,9 @@ import StepDone from "../components/steps/StepDone";
 
 const initialState: WizardState = {
   current: "intro",
-  environment: (typeof window !== "undefined" && (localStorage.getItem("environment") as any)) || "development",
-  clientId: (typeof window !== "undefined" && sessionStorage.getItem("clientId")) || "",
-  clientSecret: (typeof window !== "undefined" && sessionStorage.getItem("clientSecret")) || "",
+  environment: "development",
+  clientId: "",
+  clientSecret: "",
   token: undefined,
   file: null,
   fileName: undefined,
@@ -48,7 +48,6 @@ const initialState: WizardState = {
   actionChoice: "prepare",
   autoRun: false,
   autoDelayMs: 900,
-  simulate: true,
   steps: {
     intro: { status: "idle" },
     token: { status: "idle" },
@@ -127,35 +126,6 @@ function usePoller() {
   return { start, stop };
 }
 
-// —— Mock API (you can switch off with simulate=false) ——
-async function mockCall(name: string, payload: any) {
-  // Simulate network latency
-  await new Promise((r) => setTimeout(r, 700 + Math.random() * 600));
-  // Return a generic shape you can replace later
-  if (name === "getToken") {
-    return { access_token: "mock_token_" + Math.random().toString(36).slice(2), expires_in: 3600 };
-  }
-  if (name === "upload") {
-    return { fileId: "file_" + Math.random().toString(36).slice(2), name: payload?.fileName };
-  }
-  if (name === "prepare") {
-    return { processId: "proc_" + Math.random().toString(36).slice(2), status: "queued" };
-  }
-  if (name === "prepare_send") {
-    return { processId: "proc_" + Math.random().toString(36).slice(2), status: "queued", sent: true };
-  }
-  if (name === "send") {
-    return { processId: payload?.processId || "proc_" + Math.random().toString(36).slice(2), status: "queued" };
-  }
-  if (name === "poll") {
-    // produce a fake progressing status
-    const pct = Math.min(100, (payload?.__pct || 0) + 25 + Math.round(Math.random() * 20));
-    const done = pct >= 100;
-    return { status: done ? "completed" : "processing", progress: pct, timestamp: new Date().toISOString() };
-  }
-  return { ok: true };
-}
-
 // —— Real fetch wrapper (fills in later) ——
 async function realFetch(url: string, body?: any, token?: string) {
   const res = await fetch(url, {
@@ -173,6 +143,16 @@ async function realFetch(url: string, body?: any, token?: string) {
 // —— Page ——
 export default function Page() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const env = (localStorage.getItem("environment") as any) || "development";
+      const cid = sessionStorage.getItem("clientId") || "";
+      const cs = sessionStorage.getItem("clientSecret") || "";
+      dispatch({ type: "SET_FIELD", key: "environment", value: env });
+      dispatch({ type: "SET_FIELD", key: "clientId", value: cid });
+      dispatch({ type: "SET_FIELD", key: "clientSecret", value: cs });
+    }
+  }, []);
   const wait = useDelay();
   const poller = usePoller();
   const [snack, setSnack] = useState<string | null>(null);
@@ -200,14 +180,14 @@ export default function Page() {
       const body = { client_id: state.clientId, client_secret: state.clientSecret, grant_type: "client_credentials" };
       const { url } = buildTokenRequest(state.clientId, state.clientSecret);
       dispatch({ type: "SET_STEP", step: "token", patch: { request: { url, body } } });
-      const data = state.simulate ? await mockCall("getToken", body) : await getToken(state.clientId, state.clientSecret);
+      const data = await getToken(state.clientId, state.clientSecret);
       dispatch({ type: "SET_FIELD", key: "token", value: data.access_token });
       dispatch({ type: "SET_STEP", step: "token", patch: { status: "success", response: data } });
       setSnack("Token acquired.");
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "token", patch: { status: "error", error: String(e) } });
     }
-  }, [state.clientId, state.clientSecret, state.simulate]);
+  }, [state.clientId, state.clientSecret]);
 
   const runUpload = useCallback(async () => {
     if (!state.file) {
@@ -218,27 +198,25 @@ export default function Page() {
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "running", error: undefined } });
       const body = { fileName: state.fileName, contentType: state.file?.type || "application/pdf" };
       dispatch({ type: "SET_STEP", step: "upload", patch: { request: { url: API.UPLOAD_URL || "<UPLOAD_URL>", body } } });
-      const data = state.simulate ? await mockCall("upload", body) : await realFetch(API.UPLOAD_URL, body, state.token);
+      const data = await realFetch(API.UPLOAD_URL, body, state.token);
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "success", response: data } });
 
       // Polling for upload processing
-      const tickRef = { pct: 0 } as any;
       dispatch({ type: "SET_STEP", step: "upload", patch: { polling: { isActive: true, logs: [] } } });
       await poller.start(
         "upload",
         data.fileId,
         (payload) => {
-          tickRef.pct = payload.progress;
           dispatch({ type: "SET_STEP", step: "upload", patch: { polling: { isActive: true, logs: [ ...(state.steps.upload.polling?.logs || []), payload ], last: payload } } });
         },
-        () => state.simulate ? mockCall("poll", { __pct: tickRef.pct }) : realFetch(API.POLL_URL, { fileId: data.fileId }),
+        () => realFetch(API.POLL_URL, { fileId: data.fileId }),
         (p) => p.status === "completed"
       );
       setSnack("File uploaded.");
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "error", error: String(e) } });
     }
-  }, [state.file, state.fileName, state.token, state.simulate, state.steps.upload.polling, poller]);
+  }, [state.file, state.fileName, state.token, state.steps.upload.polling, poller]);
 
   const runPrepareOrPrepareSend = useCallback(async () => {
     try {
@@ -246,23 +224,20 @@ export default function Page() {
       const emails = state.emails.split(",").map((e) => e.trim()).filter(Boolean);
       const body = { emails, fileId: state.steps.upload.response?.fileId };
       const url = state.actionChoice === "prepare_send" ? (API.PREPARE_AND_SEND_URL || "<PREPARE_AND_SEND_URL>") : (API.PREPARE_URL || "<PREPARE_URL>");
-      const mockName = state.actionChoice === "prepare_send" ? "prepare_send" : "prepare";
       dispatch({ type: "SET_STEP", step: "prepare", patch: { request: { url, body } } });
-      const data = state.simulate ? await mockCall(mockName, body) : await realFetch(url, body, state.token);
+      const data = await realFetch(url, body, state.token);
       dispatch({ type: "SET_FIELD", key: "processId", value: data.processId });
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success", response: data } });
 
       // Polling for prepare/prepare+send
-      const tickRef = { pct: 0 } as any;
       dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [] } } });
       await poller.start(
         "prepare",
         data.processId,
         (payload) => {
-          tickRef.pct = payload.progress;
           dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ], last: payload } } });
         },
-        () => state.simulate ? mockCall("poll", { __pct: tickRef.pct }) : realFetch(API.POLL_URL, { processId: data.processId }),
+        () => realFetch(API.POLL_URL, { processId: data.processId }),
         (p) => p.status === "completed"
       );
 
@@ -270,27 +245,25 @@ export default function Page() {
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "error", error: String(e) } });
     }
-  }, [state.actionChoice, state.emails, state.steps.upload.response, state.simulate, state.token, state.steps.prepare.polling, poller]);
+  }, [state.actionChoice, state.emails, state.steps.upload.response, state.token, state.steps.prepare.polling, poller]);
 
   const runSendOnly = useCallback(async () => {
     try {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "running", error: undefined } });
       const body = { processId: state.processId };
       dispatch({ type: "SET_STEP", step: "send", patch: { request: { url: API.SEND_URL || "<SEND_URL>", body } } });
-      const data = state.simulate ? await mockCall("send", body) : await realFetch(API.SEND_URL, body, state.token);
+      const data = await realFetch(API.SEND_URL, body, state.token);
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "success", response: data } });
 
       // Polling for send
-      const tickRef = { pct: 0 } as any;
       dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [] } } });
       await poller.start(
         "send",
         data.processId,
         (payload) => {
-          tickRef.pct = payload.progress;
           dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ], last: payload } } });
         },
-        () => state.simulate ? mockCall("poll", { __pct: tickRef.pct }) : realFetch(API.POLL_URL, { processId: data.processId }),
+        () => realFetch(API.POLL_URL, { processId: data.processId }),
         (p) => p.status === "completed"
       );
 
@@ -298,7 +271,7 @@ export default function Page() {
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "error", error: String(e) } });
     }
-  }, [state.processId, state.simulate, state.token, state.steps.send.polling, poller]);
+  }, [state.processId, state.token, state.steps.send.polling, poller]);
 
   // —— Automation ——
   const runAll = useCallback(async () => {
