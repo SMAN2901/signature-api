@@ -3,7 +3,6 @@
 import { ThemeProvider, CssBaseline, createTheme, GlobalStyles } from '@mui/material';
 import dark from './dark';
 import light from './light';
-import '@fontsource-variable/inter';
 import { useThemeMode } from '@/contexts/ThemeContext';
 
 export default function ThemeRegistry({ children }: { children: React.ReactNode }) {

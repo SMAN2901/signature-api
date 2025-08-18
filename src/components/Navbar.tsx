@@ -1,16 +1,10 @@
 "use client";
 import React from "react";
-import { AppBar, Toolbar, Box, IconButton } from "@mui/material";
-import LightModeIcon from "@mui/icons-material/LightMode";
-import DarkModeIcon from "@mui/icons-material/DarkMode";
+import { AppBar, Toolbar, Box } from "@mui/material";
 import Image from "next/image";
+import ThemeSwitcher from "./ThemeSwitcher";
 
-interface NavbarProps {
-  mode: "light" | "dark";
-  toggleTheme: () => void;
-}
-
-export default function Navbar({ mode, toggleTheme }: NavbarProps) {
+export default function Navbar() {
   return (
     <AppBar position="sticky" color="default" elevation={1}>
       <Toolbar>
@@ -22,9 +16,7 @@ export default function Navbar({ mode, toggleTheme }: NavbarProps) {
             height={32}
           />
         </Box>
-        <IconButton onClick={toggleTheme}>
-          {mode === "light" ? <DarkModeIcon /> : <LightModeIcon />}
-        </IconButton>
+        <ThemeSwitcher />
       </Toolbar>
     </AppBar>
   );

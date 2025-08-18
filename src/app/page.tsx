@@ -1,14 +1,12 @@
 "use client";
-import React, { useCallback, useEffect, useReducer, useRef, useState, useMemo } from "react";
-import { ThemeProvider, CssBaseline, Box, Snackbar, Alert } from "@mui/material";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { Box, Snackbar, Alert } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import SendIcon from "@mui/icons-material/Send";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import DescriptionIcon from "@mui/icons-material/Description";
 import SettingsEthernetIcon from "@mui/icons-material/SettingsEthernet";
-import lightTheme from "../theme/light";
-import darkTheme from "../theme/dark";
 import { getToken, buildTokenRequest } from "../services/token";
 import Navbar from "../components/Navbar";
 import Sidenav from "../components/Sidenav";
@@ -178,24 +176,6 @@ export default function Page() {
   const wait = useDelay();
   const poller = usePoller();
   const [snack, setSnack] = useState<string | null>(null);
-  const [mode, setMode] = useState<"light" | "dark">(() => {
-    if (typeof window !== "undefined") {
-      const stored =
-        (localStorage.getItem("theme") as "light" | "dark") ||
-        (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-      document.body.dataset.theme = stored;
-      return stored;
-    }
-    return "light";
-  });
-  const theme = useMemo(() => (mode === "light" ? lightTheme : darkTheme), [mode]);
-  const toggleTheme = () => setMode((m) => (m === "light" ? "dark" : "light"));
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem("theme", mode);
-      document.body.dataset.theme = mode;
-    }
-  }, [mode]);
 
   const stepsOrder: { key: StepKey; label: string; icon: React.ReactNode }[] = [
     { key: "intro", label: "Intro", icon: <SettingsEthernetIcon /> },
@@ -421,10 +401,9 @@ export default function Page() {
   );
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <>
       <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "background.default" }}>
-        <Navbar mode={mode} toggleTheme={toggleTheme} />
+        <Navbar />
         <Box sx={{ flex: 1, display: "flex", overflow: "hidden" }}>
           <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0, overflow: "auto" }}>
             <Sidenav state={state} dispatch={dispatch} stepsOrder={stepsOrder} runAll={runAll} go={go} />
@@ -437,6 +416,6 @@ export default function Page() {
           {snack}
         </Alert>
       </Snackbar>
-    </ThemeProvider>
+    </>
   );
 }
