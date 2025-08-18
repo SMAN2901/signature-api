@@ -17,7 +17,6 @@ export async function getToken(clientId: string, clientSecret: string) {
   const params = new URLSearchParams(body);
   const res = await axios.post(url, params, {
     headers: {
-      Origin: baseUrl,
       "Content-Type": "application/x-www-form-urlencoded",
     },
   });
