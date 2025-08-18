@@ -31,7 +31,6 @@ export interface WizardState {
   actionChoice: "prepare" | "prepare_send";
   autoRun: boolean;
   autoDelayMs: number;
-  simulate: boolean;
   steps: Record<StepKey, StepState>;
 }
 
