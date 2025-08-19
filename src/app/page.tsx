@@ -18,7 +18,7 @@ import {
   buildPrepareAndSendContractRequest,
   buildSendContractRequest,
 } from "../services/contract";
-import { getUploadUrl, uploadFile, pollUploadStatus, buildGetUploadUrlRequest } from "../services/storage";
+import { getUploadUrl, uploadFile, buildGetUploadUrlRequest } from "../services/storage";
 import Navbar from "../components/Navbar";
 import Sidenav from "../components/Sidenav";
 import { v4 as uuidv4 } from 'uuid';
@@ -51,7 +51,7 @@ const initialState: WizardState = {
     intro: { status: "idle" },
     token: { status: "idle" },
     uploadUrl: { status: "idle" },
-    upload: { status: "idle", polling: { isActive: false, logs: [] } },
+    upload: { status: "idle" },
     prepare: { status: "idle", polling: { isActive: false, logs: [] } },
     send: { status: "idle", polling: { isActive: false, logs: [] } },
     done: { status: "idle" },
@@ -197,42 +197,24 @@ export default function Page() {
       setSnack("Please choose a PDF first.");
       return;
     }
-    if (!state.uploadUrl) {
+    const uploadUrl =
+      state.uploadUrl ||
+      (state.steps.uploadUrl.response as any)?.url ||
+      (state.steps.uploadUrl.response as any)?.uploadUrl;
+    if (!uploadUrl) {
       setSnack("Please get the upload URL first.");
       return;
     }
     try {
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "running", error: undefined } });
-      dispatch({ type: "SET_STEP", step: "upload", patch: { request: { url: state.uploadUrl } } });
-      const data = await uploadFile(state.uploadUrl, state.file);
+      dispatch({ type: "SET_STEP", step: "upload", patch: { request: { url: uploadUrl } } });
+      const data = await uploadFile(uploadUrl, state.file);
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "success", response: data } });
-
-      // Polling for upload processing
-      dispatch({ type: "SET_STEP", step: "upload", patch: { polling: { isActive: true, logs: [] } } });
-      await poller.start(
-        "upload",
-        state.fileId!,
-        (payload) => {
-          dispatch({
-            type: "SET_STEP",
-            step: "upload",
-            patch: {
-              polling: {
-                isActive: true,
-                logs: [ ...(state.steps.upload.polling?.logs || []), payload ],
-                last: payload,
-              },
-            },
-          });
-        },
-        () => pollUploadStatus(state.fileId!),
-        (p) => p.status === "completed"
-      );
       setSnack("File uploaded.");
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "error", error: String(e) } });
     }
-  }, [state.file, state.uploadUrl, state.fileId, state.steps.upload.polling, poller]);
+  }, [state.file, state.uploadUrl, state.steps.uploadUrl]);
 
   const runPrepareOrPrepareSend = useCallback(async () => {
     try {
@@ -359,15 +341,6 @@ export default function Page() {
           state={state}
           runUpload={runUpload}
           go={go}
-          onStopPolling={() => {
-            poller.stop("upload");
-            const ps = state.steps.upload.polling!;
-            dispatch({
-              type: "SET_STEP",
-              step: "upload",
-              patch: { polling: { ...ps, isActive: false } },
-            });
-          }}
         />
       )}
       {state.current === "prepare" && (
