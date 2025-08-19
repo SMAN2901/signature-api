@@ -250,14 +250,14 @@ export default function Page() {
           dispatch({
             type: "SET_STEP",
             step: "prepare",
-            patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ], last: payload } },
+            patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ] } },
           });
         },
         () => getEvents({ processId, DocumentId: documentId }, state.token),
         (events) => {
           return (
             Array.isArray(events) &&
-            events.some((e: any) => e.Status === "preparation_success" && typeof e.Success === "boolean")
+            events.some((e: any) => e.Status === "preparation_success" && e.Success === true)
           );
         }
       );
@@ -285,7 +285,11 @@ export default function Page() {
         "send",
         processId,
         (payload) => {
-          dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ], last: payload } } });
+          dispatch({
+            type: "SET_STEP",
+            step: "send",
+            patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ] } },
+          });
         },
         () => getEvents({ processId, DocumentId: state.documentId }, state.token),
         (p) => p.status === "completed"
