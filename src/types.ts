@@ -15,7 +15,6 @@ export interface StepState {
   polling?: {
     isActive: boolean;
     logs: any[];
-    last?: any;
   };
 }
 
