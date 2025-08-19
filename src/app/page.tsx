@@ -183,8 +183,8 @@ export default function Page() {
       const { url, body } = buildGetUploadUrlRequest(itemId, state.fileName || "file.pdf");
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { request: { url, body } } });
       const data = await getUploadUrl(itemId, state.fileName || "file.pdf", state.token);
-      dispatch({ type: "SET_FIELD", key: "uploadUrl", value: data.url || data.uploadUrl });
-      dispatch({ type: "SET_FIELD", key: "fileId", value: data.fileId || data.itemId || itemId });
+      dispatch({ type: "SET_FIELD", key: "uploadUrl", value: data.UploadUrl });
+      dispatch({ type: "SET_FIELD", key: "fileId", value: data.FileId });
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "success", response: data } });
       setSnack("Upload URL acquired.");
     } catch (e: any) {

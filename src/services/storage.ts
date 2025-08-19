@@ -27,7 +27,9 @@ export async function getUploadUrl(itemId: string, name: string, token?: string)
 }
 
 export async function uploadFile(url: string, file: Blob | ArrayBuffer) {
-  const res = await axios.put(url, file);
+  const res = await axios.put(url, file, {
+    headers: { 'x-ms-blob-type': 'BlockBlob'}
+  });
   return { status: res.status };
 }
 
