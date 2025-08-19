@@ -254,8 +254,7 @@ export default function Page() {
           });
         },
         () => getEvents({ processId, DocumentId: documentId }, state.token),
-        (p) => {
-          const events = p.events || p.Events;
+        (events) => {
           return (
             Array.isArray(events) &&
             events.some((e: any) => e.Status === "preparation_success" && typeof e.Success === "boolean")
