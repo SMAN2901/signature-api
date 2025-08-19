@@ -25,10 +25,10 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
   const s = state.steps.prepare;
   return (
     <Stack spacing={2}>
-      <Typography variant="h6">Step 4 — Prepare / Prepare and Send</Typography>
+      <Typography variant="h6">Step 5 — Prepare / Prepare and Send</Typography>
       <Typography variant="body2">
         Choose an action and provide a list of recipient emails (comma-separated). If you choose <em>Prepare and Send</em>,
-        Step 5 will be skipped.
+        Step 6 will be skipped.
       </Typography>
       <FormControl fullWidth>
         <InputLabel id="action-label">Action</InputLabel>
@@ -53,7 +53,7 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
         <Button
           variant="contained"
           onClick={runPrepareOrPrepareSend}
-          disabled={s.status === "running" || !state.steps.upload.response}
+          disabled={s.status === "running" || !state.fileId}
         >
           Run
         </Button>

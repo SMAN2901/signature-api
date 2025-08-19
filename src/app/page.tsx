@@ -7,7 +7,10 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import LockOpenIcon from "@mui/icons-material/LockOpen";
 import DescriptionIcon from "@mui/icons-material/Description";
 import SettingsEthernetIcon from "@mui/icons-material/SettingsEthernet";
+import LinkIcon from "@mui/icons-material/Link";
 import { getToken, buildTokenRequest } from "../services/token";
+import { pollProcess, prepareAndSendContract, prepareContract, sendContract } from "../services/contract";
+import { getUploadUrl, uploadFile, pollUploadStatus, buildGetUploadUrlBody } from "../services/storage";
 import Navbar from "../components/Navbar";
 import Sidenav from "../components/Sidenav";
 
@@ -20,7 +23,7 @@ import Sidenav from "../components/Sidenav";
 // —— Configuration placeholders (edit these later) ——
 const API = {
   TOKEN_URL: "",
-  UPLOAD_URL: "",
+  GET_UPLOAD_URL: "",
   PREPARE_URL: "",
   PREPARE_AND_SEND_URL: "",
   SEND_URL: "",
@@ -30,6 +33,7 @@ const API = {
 import { StepKey, WizardState, Action } from "../types";
 import StepIntro from "../components/steps/StepIntro";
 import StepToken from "../components/steps/StepToken";
+import StepUploadUrl from "../components/steps/StepUploadUrl";
 import StepUpload from "../components/steps/StepUpload";
 import StepPrepare from "../components/steps/StepPrepare";
 import StepSend from "../components/steps/StepSend";
@@ -43,6 +47,8 @@ const initialState: WizardState = {
   token: undefined,
   file: null,
   fileName: undefined,
+  uploadUrl: undefined,
+  fileId: undefined,
   processId: undefined,
   emails: "",
   actionChoice: "prepare",
@@ -51,6 +57,7 @@ const initialState: WizardState = {
   steps: {
     intro: { status: "idle" },
     token: { status: "idle" },
+    uploadUrl: { status: "idle" },
     upload: { status: "idle", polling: { isActive: false, logs: [] } },
     prepare: { status: "idle", polling: { isActive: false, logs: [] } },
     send: { status: "idle", polling: { isActive: false, logs: [] } },
@@ -126,20 +133,6 @@ function usePoller() {
   return { start, stop };
 }
 
-// —— Real fetch wrapper (fills in later) ——
-async function realFetch(url: string, body?: any, token?: string) {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.json();
-}
-
 // —— Page ——
 export default function Page() {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -160,6 +153,7 @@ export default function Page() {
   const stepsOrder: { key: StepKey; label: string; icon: React.ReactNode }[] = [
     { key: "intro", label: "Intro", icon: <SettingsEthernetIcon /> },
     { key: "token", label: "Get Token", icon: <LockOpenIcon /> },
+    { key: "uploadUrl", label: "Get Upload Url", icon: <LinkIcon /> },
     { key: "upload", label: "Upload File", icon: <CloudUploadIcon /> },
     { key: "prepare", label: "Prepare / Prepare+Send", icon: <DescriptionIcon /> },
     { key: "send", label: "Send Contract", icon: <SendIcon /> },
@@ -189,43 +183,82 @@ export default function Page() {
     }
   }, [state.clientId, state.clientSecret]);
 
+  const runGetUploadUrl = useCallback(async () => {
+    try {
+      dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "running", error: undefined } });
+      const itemId = state.fileId || crypto.randomUUID();
+      const body = buildGetUploadUrlBody(itemId, state.fileName || "file.pdf");
+      dispatch({
+        type: "SET_STEP",
+        step: "uploadUrl",
+        patch: { request: { url: API.GET_UPLOAD_URL || "<GET_UPLOAD_URL>", body } },
+      });
+      const data = await getUploadUrl(API.GET_UPLOAD_URL, itemId, state.fileName || "file.pdf", state.token);
+      dispatch({ type: "SET_FIELD", key: "uploadUrl", value: data.url || data.uploadUrl });
+      dispatch({ type: "SET_FIELD", key: "fileId", value: data.fileId || data.itemId || itemId });
+      dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "success", response: data } });
+      setSnack("Upload URL acquired.");
+    } catch (e: any) {
+      dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "error", error: String(e) } });
+    }
+  }, [state.fileName, state.fileId, state.token]);
+
   const runUpload = useCallback(async () => {
     if (!state.file) {
       setSnack("Please choose a PDF first.");
       return;
     }
+    if (!state.uploadUrl) {
+      setSnack("Please get the upload URL first.");
+      return;
+    }
     try {
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "running", error: undefined } });
-      const body = { fileName: state.fileName, contentType: state.file?.type || "application/pdf" };
-      dispatch({ type: "SET_STEP", step: "upload", patch: { request: { url: API.UPLOAD_URL || "<UPLOAD_URL>", body } } });
-      const data = await realFetch(API.UPLOAD_URL, body, state.token);
+      dispatch({ type: "SET_STEP", step: "upload", patch: { request: { url: state.uploadUrl } } });
+      const data = await uploadFile(state.uploadUrl, state.file);
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "success", response: data } });
 
       // Polling for upload processing
       dispatch({ type: "SET_STEP", step: "upload", patch: { polling: { isActive: true, logs: [] } } });
       await poller.start(
         "upload",
-        data.fileId,
+        state.fileId!,
         (payload) => {
-          dispatch({ type: "SET_STEP", step: "upload", patch: { polling: { isActive: true, logs: [ ...(state.steps.upload.polling?.logs || []), payload ], last: payload } } });
+          dispatch({
+            type: "SET_STEP",
+            step: "upload",
+            patch: {
+              polling: {
+                isActive: true,
+                logs: [ ...(state.steps.upload.polling?.logs || []), payload ],
+                last: payload,
+              },
+            },
+          });
         },
-        () => realFetch(API.POLL_URL, { fileId: data.fileId }),
+        () => pollUploadStatus(API.POLL_URL, state.fileId!),
         (p) => p.status === "completed"
       );
       setSnack("File uploaded.");
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "error", error: String(e) } });
     }
-  }, [state.file, state.fileName, state.token, state.steps.upload.polling, poller]);
+  }, [state.file, state.uploadUrl, state.fileId, state.steps.upload.polling, poller]);
 
   const runPrepareOrPrepareSend = useCallback(async () => {
     try {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "running", error: undefined } });
       const emails = state.emails.split(",").map((e) => e.trim()).filter(Boolean);
-      const body = { emails, fileId: state.steps.upload.response?.fileId };
-      const url = state.actionChoice === "prepare_send" ? (API.PREPARE_AND_SEND_URL || "<PREPARE_AND_SEND_URL>") : (API.PREPARE_URL || "<PREPARE_URL>");
+      const body = { emails, fileId: state.fileId };
+      const url =
+        state.actionChoice === "prepare_send"
+          ? API.PREPARE_AND_SEND_URL || "<PREPARE_AND_SEND_URL>"
+          : API.PREPARE_URL || "<PREPARE_URL>";
       dispatch({ type: "SET_STEP", step: "prepare", patch: { request: { url, body } } });
-      const data = await realFetch(url, body, state.token);
+      const data =
+        state.actionChoice === "prepare_send"
+          ? await prepareAndSendContract(url, body, state.token)
+          : await prepareContract(url, body, state.token);
       dispatch({ type: "SET_FIELD", key: "processId", value: data.processId });
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success", response: data } });
 
@@ -237,7 +270,7 @@ export default function Page() {
         (payload) => {
           dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ], last: payload } } });
         },
-        () => realFetch(API.POLL_URL, { processId: data.processId }),
+        () => pollProcess(API.POLL_URL, { processId: data.processId }),
         (p) => p.status === "completed"
       );
 
@@ -245,14 +278,14 @@ export default function Page() {
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "error", error: String(e) } });
     }
-  }, [state.actionChoice, state.emails, state.steps.upload.response, state.token, state.steps.prepare.polling, poller]);
+  }, [state.actionChoice, state.emails, state.fileId, state.token, state.steps.prepare.polling, poller]);
 
   const runSendOnly = useCallback(async () => {
     try {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "running", error: undefined } });
       const body = { processId: state.processId };
       dispatch({ type: "SET_STEP", step: "send", patch: { request: { url: API.SEND_URL || "<SEND_URL>", body } } });
-      const data = await realFetch(API.SEND_URL, body, state.token);
+      const data = await sendContract(API.SEND_URL, body, state.token);
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "success", response: data } });
 
       // Polling for send
@@ -263,7 +296,7 @@ export default function Page() {
         (payload) => {
           dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ], last: payload } } });
         },
-        () => realFetch(API.POLL_URL, { processId: data.processId }),
+        () => pollProcess(API.POLL_URL, { processId: data.processId }),
         (p) => p.status === "completed"
       );
 
@@ -283,27 +316,31 @@ export default function Page() {
       await wait(d);
       await runToken();
       // 3
+      go("uploadUrl");
+      await wait(d);
+      await runGetUploadUrl();
+      // 4
       go("upload");
       await wait(d);
       await runUpload();
-      // 4
+      // 5
       go("prepare");
       await wait(d);
       await runPrepareOrPrepareSend();
-      // 5 (only if prepare-only)
+      // 6 (only if prepare-only)
       if (state.actionChoice === "prepare") {
         go("send");
         await wait(d);
         await runSendOnly();
       }
-      // 6
+      // 7
       go("done");
       await wait(300);
       setSnack("All steps finished.");
     } finally {
       dispatch({ type: "SET_FIELD", key: "autoRun", value: false });
     }
-  }, [runToken, runUpload, runPrepareOrPrepareSend, runSendOnly, state.autoDelayMs, state.actionChoice, wait]);
+  }, [runToken, runGetUploadUrl, runUpload, runPrepareOrPrepareSend, runSendOnly, state.autoDelayMs, state.actionChoice, wait]);
 
   // —— Per-step content ——
   const Main = (
@@ -316,6 +353,14 @@ export default function Page() {
           state={state}
           dispatch={dispatch}
           runToken={runToken}
+          go={go}
+        />
+      )}
+      {state.current === "uploadUrl" && (
+        <StepUploadUrl
+          state={state}
+          dispatch={dispatch}
+          runGetUploadUrl={runGetUploadUrl}
           go={go}
         />
       )}

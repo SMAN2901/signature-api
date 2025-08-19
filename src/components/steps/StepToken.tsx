@@ -52,7 +52,7 @@ export default function StepToken({ state, dispatch, runToken, go }: Props) {
       <JsonBox label="Response" data={state.steps.token.response} />
       {s.error && <JsonBox label="Error" data={s.error} />}
       <Stack direction="row" spacing={2}>
-        <Button variant="outlined" onClick={() => go("upload")}>Next</Button>
+        <Button variant="outlined" onClick={() => go("uploadUrl")}>Next</Button>
       </Stack>
     </Stack>
   );

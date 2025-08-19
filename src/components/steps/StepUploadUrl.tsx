@@ -1,0 +1,44 @@
+import React from "react";
+import { Button, Stack, TextField, Typography } from "@mui/material";
+import LinkIcon from "@mui/icons-material/Link";
+import JsonBox from "../JsonBox";
+import { Action, StepKey, WizardState } from "../../types";
+
+interface Props {
+  state: WizardState;
+  dispatch: React.Dispatch<Action>;
+  runGetUploadUrl: () => void;
+  go: (step: StepKey) => void;
+}
+
+export default function StepUploadUrl({ state, dispatch, runGetUploadUrl, go }: Props) {
+  const s = state.steps.uploadUrl;
+  return (
+    <Stack spacing={2}>
+      <Typography variant="h6">Step 3 — Get Upload Url</Typography>
+      <Typography variant="body2">Request a pre-signed URL for file upload.</Typography>
+      <TextField
+        label="File Name"
+        value={state.fileName || ""}
+        onChange={(e) => dispatch({ type: "SET_FIELD", key: "fileName", value: e.target.value })}
+        fullWidth
+      />
+      <Stack direction="row" spacing={2}>
+        <Button
+          variant="contained"
+          onClick={runGetUploadUrl}
+          disabled={s.status === "running" || !state.fileName}
+          startIcon={<LinkIcon />}
+        >
+          Get Upload Url
+        </Button>
+      </Stack>
+      <JsonBox label="Request" data={state.steps.uploadUrl.request} />
+      <JsonBox label="Response" data={state.steps.uploadUrl.response} />
+      {s.error && <JsonBox label="Error" data={s.error} />}
+      <Stack direction="row" spacing={2}>
+        <Button variant="outlined" onClick={() => go("upload")}>Next</Button>
+      </Stack>
+    </Stack>
+  );
+}

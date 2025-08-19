@@ -1,6 +1,7 @@
 export type StepKey =
   | "intro"
   | "token"
+  | "uploadUrl"
   | "upload"
   | "prepare"
   | "send"
@@ -26,6 +27,8 @@ export interface WizardState {
   token?: string;
   file?: File | null;
   fileName?: string;
+  uploadUrl?: string;
+  fileId?: string;
   processId?: string;
   emails: string;
   actionChoice: "prepare" | "prepare_send";

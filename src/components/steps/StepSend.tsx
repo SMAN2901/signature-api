@@ -16,8 +16,8 @@ export default function StepSend({ state, runSendOnly, go, onStopPolling }: Prop
   const s = state.steps.send;
   return (
     <Stack spacing={2}>
-      <Typography variant="h6">Step 5 — Send Contract</Typography>
-      <Typography variant="body2">If you prepared the contract in Step 4, send it now.</Typography>
+      <Typography variant="h6">Step 6 — Send Contract</Typography>
+      <Typography variant="body2">If you prepared the contract in Step 5, send it now.</Typography>
       <Stack direction="row" spacing={2}>
         <Button
           variant="contained"
