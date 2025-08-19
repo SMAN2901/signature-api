@@ -10,7 +10,7 @@ import SettingsEthernetIcon from "@mui/icons-material/SettingsEthernet";
 import LinkIcon from "@mui/icons-material/Link";
 import { getToken, buildTokenRequest } from "../services/token";
 import {
-  pollProcess,
+  getEvents,
   prepareAndSendContract,
   prepareContract,
   sendContract,
@@ -224,11 +224,11 @@ export default function Page() {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "running", error: undefined } });
       const emails = state.emails.split(",").map((e) => e.trim()).filter(Boolean);
       const body = { emails, fileId: state.fileId!, title: state.title, signatureClass: state.signatureClass };
-      const { url } =
+      const { url, body: payload } =
         state.actionChoice === "prepare_send"
           ? buildPrepareAndSendContractRequest(body)
           : buildPrepareContractRequest(body);
-      dispatch({ type: "SET_STEP", step: "prepare", patch: { request: { url, body } } });
+      dispatch({ type: "SET_STEP", step: "prepare", patch: { request: { url, body: payload } } });
       const data =
         state.actionChoice === "prepare_send"
           ? await prepareAndSendContract(body, state.token)
@@ -253,7 +253,7 @@ export default function Page() {
             patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ], last: payload } },
           });
         },
-        () => pollProcess({ processId }, state.token),
+        () => getEvents({ processId }, state.token),
         (p) => p.status === "completed"
       );
 
@@ -281,7 +281,7 @@ export default function Page() {
         (payload) => {
           dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ], last: payload } } });
         },
-        () => pollProcess({ processId }, state.token),
+        () => getEvents({ processId }, state.token),
         (p) => p.status === "completed"
       );
 

@@ -6,7 +6,7 @@ const staging = {
   prepareContractApi: "api/selisign/v65/SeliSign//ExternalApp/PrepareContract",
   prepareAndSendContractApi: "api/selisign/v65/SeliSign//ExternalApp/PrepareAndSendContract",
   sendContractApi: "api/selisign/v65/SeliSign//ExternalApp/RolloutContract",
-  pollProcessApi: "api/signature/v1/Contract/PollProcess",
+  getEventsApi: "api/selisign/v65/SeliSign//ExternalApp/GetEvents",
 };
 
 export default staging;

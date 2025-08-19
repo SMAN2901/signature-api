@@ -12,7 +12,7 @@ export interface EnvConfig {
   prepareContractApi: string;
   prepareAndSendContractApi: string;
   sendContractApi: string;
-  pollProcessApi: string;
+  getEventsApi: string;
 }
 
 const configs: Record<Environment, EnvConfig> = {

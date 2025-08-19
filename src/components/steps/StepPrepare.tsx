@@ -48,13 +48,18 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
         onChange={(e) => dispatch({ type: "SET_FIELD", key: "title", value: e.target.value })}
         fullWidth
       />
-      <TextField
-        label="Signature Class"
-        type="number"
-        value={state.signatureClass}
-        onChange={(e) => dispatch({ type: "SET_FIELD", key: "signatureClass", value: Number(e.target.value) })}
-        fullWidth
-      />
+      <FormControl fullWidth>
+        <InputLabel id="signature-class-label">Signature Class</InputLabel>
+        <Select
+          labelId="signature-class-label"
+          label="Signature Class"
+          value={state.signatureClass}
+          onChange={(e) => dispatch({ type: "SET_FIELD", key: "signatureClass", value: Number(e.target.value) })}
+        >
+          <MenuItem value={0}>Simple</MenuItem>
+          <MenuItem value={9}>Advanced</MenuItem>
+        </Select>
+      </FormControl>
       <TextField
         label="Emails (comma-separated)"
         placeholder="a@x.com, b@y.com"
