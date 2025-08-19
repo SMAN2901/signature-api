@@ -1,6 +1,7 @@
 import React from "react";
 import { Button, Stack, TextField, Typography } from "@mui/material";
 import LinkIcon from "@mui/icons-material/Link";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import JsonBox from "../JsonBox";
 import { Action, StepKey, WizardState } from "../../types";
 
@@ -16,18 +17,27 @@ export default function StepUploadUrl({ state, dispatch, runGetUploadUrl, go }: 
   return (
     <Stack spacing={2}>
       <Typography variant="h6">Step 3 — Get Upload Url</Typography>
-      <Typography variant="body2">Request a pre-signed URL for file upload.</Typography>
-      <TextField
-        label="File Name"
-        value={state.fileName || ""}
-        onChange={(e) => dispatch({ type: "SET_FIELD", key: "fileName", value: e.target.value })}
-        fullWidth
-      />
+      <Typography variant="body2">Choose a PDF and request a pre-signed URL for upload.</Typography>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+        <Button component="label" variant="contained" startIcon={<CloudUploadIcon />}>Choose PDF
+          <input
+            type="file"
+            accept="application/pdf"
+            hidden
+            onChange={(e) => {
+              const f = e.target.files?.[0] || null;
+              dispatch({ type: "SET_FIELD", key: "file", value: f });
+              dispatch({ type: "SET_FIELD", key: "fileName", value: f?.name || undefined });
+            }}
+          />
+        </Button>
+        <TextField label="Selected file" value={state.fileName || "(none)"} InputProps={{ readOnly: true }} fullWidth />
+      </Stack>
       <Stack direction="row" spacing={2}>
         <Button
           variant="contained"
           onClick={runGetUploadUrl}
-          disabled={s.status === "running" || !state.fileName}
+          disabled={s.status === "running" || !state.file}
           startIcon={<LinkIcon />}
         >
           Get Upload Url
