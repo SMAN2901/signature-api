@@ -9,11 +9,11 @@ export function buildTokenRequest(clientId: string, clientSecret: string) {
     client_id: clientId,
     client_secret: clientSecret,
   };
-  return { url, body, baseUrl };
+  return { url, body };
 }
 
 export async function getToken(clientId: string, clientSecret: string) {
-  const { url, body, baseUrl } = buildTokenRequest(clientId, clientSecret);
+  const { url, body } = buildTokenRequest(clientId, clientSecret);
   const params = new URLSearchParams(body);
   const res = await axios.post(url, params, {
     headers: {

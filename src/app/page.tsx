@@ -13,12 +13,7 @@ import { pollProcess, prepareAndSendContract, prepareContract, sendContract } fr
 import { getUploadUrl, uploadFile, pollUploadStatus, buildGetUploadUrlBody } from "../services/storage";
 import Navbar from "../components/Navbar";
 import Sidenav from "../components/Sidenav";
-
-// ————————————————————————————————————————————
-// Minimal Next.js single-file page. Drop this into app/page.tsx
-// You will plug in your own API URLs and payload builders below.
-// Everything is in-memory; a reload resets the wizard.
-// ————————————————————————————————————————————
+import { v4 as uuidv4 } from 'uuid';
 
 // —— Configuration placeholders (edit these later) ——
 const API = {
@@ -186,7 +181,7 @@ export default function Page() {
   const runGetUploadUrl = useCallback(async () => {
     try {
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "running", error: undefined } });
-      const itemId = state.fileId || crypto.randomUUID();
+      const itemId = state.fileId || uuidv4();
       const body = buildGetUploadUrlBody(itemId, state.fileName || "file.pdf");
       dispatch({
         type: "SET_STEP",
