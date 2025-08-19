@@ -99,7 +99,7 @@ function usePoller() {
       onTick: (payload: any) => void,
       fetcher: () => Promise<any>,
       isDone: (payload: any) => boolean,
-      intervalMs = 1500
+      intervalMs = 5000
     ) => {
       // Kick an immediate tick, then interval
       const first = await fetcher();
@@ -256,7 +256,10 @@ export default function Page() {
         () => getEvents({ processId, DocumentId: documentId }, state.token),
         (p) => {
           const events = p.events || p.Events;
-          return Array.isArray(events) && events.some((e: any) => e.Status === "preparation_success" && e.Success);
+          return (
+            Array.isArray(events) &&
+            events.some((e: any) => e.Status === "preparation_success" && typeof e.Success === "boolean")
+          );
         }
       );
 
