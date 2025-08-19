@@ -7,6 +7,12 @@ export type Environment = "development" | "staging" | "production";
 export interface EnvConfig {
   baseUrl: string;
   tokenApi: string;
+  getUploadUrlApi: string;
+  pollUploadStatusApi: string;
+  prepareContractApi: string;
+  prepareAndSendContractApi: string;
+  sendContractApi: string;
+  pollProcessApi: string;
 }
 
 const configs: Record<Environment, EnvConfig> = {

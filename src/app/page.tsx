@@ -9,21 +9,19 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import SettingsEthernetIcon from "@mui/icons-material/SettingsEthernet";
 import LinkIcon from "@mui/icons-material/Link";
 import { getToken, buildTokenRequest } from "../services/token";
-import { pollProcess, prepareAndSendContract, prepareContract, sendContract } from "../services/contract";
-import { getUploadUrl, uploadFile, pollUploadStatus, buildGetUploadUrlBody } from "../services/storage";
+import {
+  pollProcess,
+  prepareAndSendContract,
+  prepareContract,
+  sendContract,
+  buildPrepareContractRequest,
+  buildPrepareAndSendContractRequest,
+  buildSendContractRequest,
+} from "../services/contract";
+import { getUploadUrl, uploadFile, pollUploadStatus, buildGetUploadUrlRequest } from "../services/storage";
 import Navbar from "../components/Navbar";
 import Sidenav from "../components/Sidenav";
 import { v4 as uuidv4 } from 'uuid';
-
-// —— Configuration placeholders (edit these later) ——
-const API = {
-  TOKEN_URL: "",
-  GET_UPLOAD_URL: "",
-  PREPARE_URL: "",
-  PREPARE_AND_SEND_URL: "",
-  SEND_URL: "",
-  POLL_URL: "", // e.g. `${base}/poll/:id` or `${base}/poll` with body { id }
-};
 
 import { StepKey, WizardState, Action } from "../types";
 import StepIntro from "../components/steps/StepIntro";
@@ -182,13 +180,9 @@ export default function Page() {
     try {
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "running", error: undefined } });
       const itemId = state.fileId || uuidv4();
-      const body = buildGetUploadUrlBody(itemId, state.fileName || "file.pdf");
-      dispatch({
-        type: "SET_STEP",
-        step: "uploadUrl",
-        patch: { request: { url: API.GET_UPLOAD_URL || "<GET_UPLOAD_URL>", body } },
-      });
-      const data = await getUploadUrl(API.GET_UPLOAD_URL, itemId, state.fileName || "file.pdf", state.token);
+      const { url, body } = buildGetUploadUrlRequest(itemId, state.fileName || "file.pdf");
+      dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { request: { url, body } } });
+      const data = await getUploadUrl(itemId, state.fileName || "file.pdf", state.token);
       dispatch({ type: "SET_FIELD", key: "uploadUrl", value: data.url || data.uploadUrl });
       dispatch({ type: "SET_FIELD", key: "fileId", value: data.fileId || data.itemId || itemId });
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "success", response: data } });
@@ -231,7 +225,7 @@ export default function Page() {
             },
           });
         },
-        () => pollUploadStatus(API.POLL_URL, state.fileId!),
+        () => pollUploadStatus(state.fileId!),
         (p) => p.status === "completed"
       );
       setSnack("File uploaded.");
@@ -245,15 +239,15 @@ export default function Page() {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "running", error: undefined } });
       const emails = state.emails.split(",").map((e) => e.trim()).filter(Boolean);
       const body = { emails, fileId: state.fileId };
-      const url =
+      const { url } =
         state.actionChoice === "prepare_send"
-          ? API.PREPARE_AND_SEND_URL || "<PREPARE_AND_SEND_URL>"
-          : API.PREPARE_URL || "<PREPARE_URL>";
+          ? buildPrepareAndSendContractRequest(body)
+          : buildPrepareContractRequest(body);
       dispatch({ type: "SET_STEP", step: "prepare", patch: { request: { url, body } } });
       const data =
         state.actionChoice === "prepare_send"
-          ? await prepareAndSendContract(url, body, state.token)
-          : await prepareContract(url, body, state.token);
+          ? await prepareAndSendContract(body, state.token)
+          : await prepareContract(body, state.token);
       dispatch({ type: "SET_FIELD", key: "processId", value: data.processId });
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success", response: data } });
 
@@ -265,7 +259,7 @@ export default function Page() {
         (payload) => {
           dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ], last: payload } } });
         },
-        () => pollProcess(API.POLL_URL, { processId: data.processId }),
+        () => pollProcess({ processId: data.processId }, state.token),
         (p) => p.status === "completed"
       );
 
@@ -279,8 +273,9 @@ export default function Page() {
     try {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "running", error: undefined } });
       const body = { processId: state.processId };
-      dispatch({ type: "SET_STEP", step: "send", patch: { request: { url: API.SEND_URL || "<SEND_URL>", body } } });
-      const data = await sendContract(API.SEND_URL, body, state.token);
+      const { url } = buildSendContractRequest(body);
+      dispatch({ type: "SET_STEP", step: "send", patch: { request: { url, body } } });
+      const data = await sendContract(body, state.token);
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "success", response: data } });
 
       // Polling for send
@@ -291,7 +286,7 @@ export default function Page() {
         (payload) => {
           dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ], last: payload } } });
         },
-        () => pollProcess(API.POLL_URL, { processId: data.processId }),
+        () => pollProcess({ processId: data.processId }, state.token),
         (p) => p.status === "completed"
       );
 
