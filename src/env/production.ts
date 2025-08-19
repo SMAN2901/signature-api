@@ -1,7 +1,7 @@
 const production = {
   baseUrl: "https://selise.app",
   tokenApi: "api/identity/v100/identity/token",
-  getUploadUrlApi: "api/storageservice/v23/StorageService/StorageQuery/GetPreSignedUrlForUpload",
+  getUploadUrlApi: "api/storageservice/v100/StorageService/StorageQuery/GetPreSignedUrlForUpload",
   pollUploadStatusApi: "api/storageservice/v23/StorageService/StorageQuery/PollUploadStatus",
   prepareContractApi: "api/signature/v1/Contract/Prepare",
   prepareAndSendContractApi: "api/signature/v1/Contract/PrepareAndSend",
