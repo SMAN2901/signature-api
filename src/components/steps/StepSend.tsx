@@ -22,7 +22,7 @@ export default function StepSend({ state, runSendOnly, go, onStopPolling }: Prop
         <Button
           variant="contained"
           onClick={runSendOnly}
-          disabled={s.status === "running" || !state.processId}
+          disabled={s.status === "running" || !state.documentId}
           startIcon={<SendIcon />}
         >
           Send Contract
