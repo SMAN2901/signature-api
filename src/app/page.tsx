@@ -239,7 +239,7 @@ export default function Page() {
       if (documentId) {
         dispatch({ type: "SET_FIELD", key: "documentId", value: documentId });
       }
-      dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success", response: data } });
+      dispatch({ type: "SET_STEP", step: "prepare", patch: { response: data } });
 
       // Polling for prepare/prepare+send
       dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [] } } });
@@ -253,10 +253,14 @@ export default function Page() {
             patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ], last: payload } },
           });
         },
-        () => getEvents({ processId }, state.token),
-        (p) => p.status === "completed"
+        () => getEvents({ processId, DocumentId: documentId }, state.token),
+        (p) => {
+          const events = p.events || p.Events;
+          return Array.isArray(events) && events.some((e: any) => e.Status === "preparation_success" && e.Success);
+        }
       );
 
+      dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success" } });
       setSnack(state.actionChoice === "prepare_send" ? "Prepared and sent." : "Prepared.");
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "error", error: String(e) } });
@@ -281,7 +285,7 @@ export default function Page() {
         (payload) => {
           dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ], last: payload } } });
         },
-        () => getEvents({ processId }, state.token),
+        () => getEvents({ processId, DocumentId: state.documentId }, state.token),
         (p) => p.status === "completed"
       );
 
