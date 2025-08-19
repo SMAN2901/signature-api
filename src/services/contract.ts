@@ -77,10 +77,19 @@ export async function sendContract(body: any, token?: string) {
   return res.data;
 }
 
-export async function getEvents(body: any, token?: string) {
+interface GetEventsBody {
+  processId: string;
+  DocumentId?: string;
+}
+
+export async function getEvents({ processId, DocumentId }: GetEventsBody, token?: string) {
   const { baseUrl, getEventsApi } = getEnv();
   const url = `${baseUrl}/${getEventsApi}`;
-  const res = await axios.post(url, body, {
+  const payload: any = { processId };
+  if (DocumentId) {
+    payload.DocumentId = DocumentId;
+  }
+  const res = await axios.post(url, payload, {
     headers: token ? { Authorization: `bearer ${token}` } : undefined,
   });
   return res.data;
