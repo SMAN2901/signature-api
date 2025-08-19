@@ -17,7 +17,7 @@ export default function StepUpload({ state, dispatch, runUpload, go, onStopPolli
   const s = state.steps.upload;
   return (
     <Stack spacing={2}>
-      <Typography variant="h6">Step 3 — Upload File</Typography>
+      <Typography variant="h6">Step 4 — Upload File</Typography>
       <Typography variant="body2">Select a single PDF and upload it.</Typography>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
         <Button component="label" variant="contained" startIcon={<CloudUploadIcon />}>Choose PDF
@@ -35,7 +35,13 @@ export default function StepUpload({ state, dispatch, runUpload, go, onStopPolli
         <TextField label="Selected file" value={state.fileName || "(none)"} InputProps={{ readOnly: true }} fullWidth />
       </Stack>
       <Stack direction="row" spacing={2}>
-        <Button variant="contained" onClick={runUpload} disabled={s.status === "running" || !state.file}>Upload</Button>
+        <Button
+          variant="contained"
+          onClick={runUpload}
+          disabled={s.status === "running" || !state.file || !state.uploadUrl}
+        >
+          Upload
+        </Button>
       </Stack>
       <JsonBox label="Request" data={state.steps.upload.request} />
       <JsonBox label="Response" data={state.steps.upload.response} />
