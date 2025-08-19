@@ -367,7 +367,6 @@ export default function Page() {
       {state.current === "upload" && (
         <StepUpload
           state={state}
-          dispatch={dispatch}
           runUpload={runUpload}
           go={go}
           onStopPolling={() => {
