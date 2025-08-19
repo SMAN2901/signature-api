@@ -6,7 +6,7 @@ const development = {
   prepareContractApi: "api/selisign/v42/SeliSign//ExternalApp/PrepareContract",
   prepareAndSendContractApi: "api/selisign/v42/SeliSign//ExternalApp/PrepareAndSendContract",
   sendContractApi: "api/selisign/v42/SeliSign//ExternalApp/RolloutContract",
-  pollProcessApi: "api/signature/v1/Contract/PollProcess",
+  getEventsApi: "api/selisign/v42/SeliSign//ExternalApp/GetEvents",
 };
 
 export default development;

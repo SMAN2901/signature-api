@@ -77,9 +77,9 @@ export async function sendContract(body: any, token?: string) {
   return res.data;
 }
 
-export async function pollProcess(body: any, token?: string) {
-  const { baseUrl, pollProcessApi } = getEnv();
-  const url = `${baseUrl}/${pollProcessApi}`;
+export async function getEvents(body: any, token?: string) {
+  const { baseUrl, getEventsApi } = getEnv();
+  const url = `${baseUrl}/${getEventsApi}`;
   const res = await axios.post(url, body, {
     headers: token ? { Authorization: `bearer ${token}` } : undefined,
   });

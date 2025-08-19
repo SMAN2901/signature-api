@@ -6,7 +6,7 @@ const production = {
   prepareContractApi: "api/selisign/s1/SeliSign//ExternalApp/PrepareContract",
   prepareAndSendContractApi: "api/selisign/s1/SeliSign//ExternalApp/PrepareAndSendContract",
   sendContractApi: "api/selisign/s1/SeliSign//ExternalApp/RolloutContract",
-  pollProcessApi: "api/signature/v1/Contract/PollProcess",
+  getEventsApi: "api/selisign/s1/SeliSign//ExternalApp/GetEvents",
 };
 
 export default production;
