@@ -43,6 +43,9 @@ const initialState: WizardState = {
   uploadUrl: undefined,
   fileId: undefined,
   processId: undefined,
+  documentId: undefined,
+  title: "",
+  signatureClass: 0,
   emails: "",
   actionChoice: "prepare",
   autoRun: false,
@@ -220,7 +223,7 @@ export default function Page() {
     try {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "running", error: undefined } });
       const emails = state.emails.split(",").map((e) => e.trim()).filter(Boolean);
-      const body = { emails, fileId: state.fileId };
+      const body = { emails, fileId: state.fileId!, title: state.title, signatureClass: state.signatureClass };
       const { url } =
         state.actionChoice === "prepare_send"
           ? buildPrepareAndSendContractRequest(body)
@@ -230,18 +233,27 @@ export default function Page() {
         state.actionChoice === "prepare_send"
           ? await prepareAndSendContract(body, state.token)
           : await prepareContract(body, state.token);
-      dispatch({ type: "SET_FIELD", key: "processId", value: data.processId });
+      const processId = data.Result?.ProcessId || data.processId;
+      const documentId = data.Result?.DocumentId || data.documentId;
+      dispatch({ type: "SET_FIELD", key: "processId", value: processId });
+      if (documentId) {
+        dispatch({ type: "SET_FIELD", key: "documentId", value: documentId });
+      }
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success", response: data } });
 
       // Polling for prepare/prepare+send
       dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [] } } });
       await poller.start(
         "prepare",
-        data.processId,
+        processId,
         (payload) => {
-          dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ], last: payload } } });
+          dispatch({
+            type: "SET_STEP",
+            step: "prepare",
+            patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ], last: payload } },
+          });
         },
-        () => pollProcess({ processId: data.processId }, state.token),
+        () => pollProcess({ processId }, state.token),
         (p) => p.status === "completed"
       );
 
@@ -249,26 +261,27 @@ export default function Page() {
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "error", error: String(e) } });
     }
-  }, [state.actionChoice, state.emails, state.fileId, state.token, state.steps.prepare.polling, poller]);
+  }, [state.actionChoice, state.emails, state.fileId, state.title, state.signatureClass, state.token, state.steps.prepare.polling, poller]);
 
   const runSendOnly = useCallback(async () => {
     try {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "running", error: undefined } });
-      const body = { processId: state.processId };
+      const body = { DocumentId: state.documentId };
       const { url } = buildSendContractRequest(body);
       dispatch({ type: "SET_STEP", step: "send", patch: { request: { url, body } } });
       const data = await sendContract(body, state.token);
+      const processId = data.Result?.ProcessId || data.processId;
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "success", response: data } });
 
       // Polling for send
       dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [] } } });
       await poller.start(
         "send",
-        data.processId,
+        processId,
         (payload) => {
           dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ], last: payload } } });
         },
-        () => pollProcess({ processId: data.processId }, state.token),
+        () => pollProcess({ processId }, state.token),
         (p) => p.status === "completed"
       );
 
@@ -276,7 +289,7 @@ export default function Page() {
     } catch (e: any) {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "error", error: String(e) } });
     }
-  }, [state.processId, state.token, state.steps.send.polling, poller]);
+  }, [state.documentId, state.token, state.steps.send.polling, poller]);
 
   // —— Automation ——
   const runAll = useCallback(async () => {

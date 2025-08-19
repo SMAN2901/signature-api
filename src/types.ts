@@ -30,6 +30,9 @@ export interface WizardState {
   uploadUrl?: string;
   fileId?: string;
   processId?: string;
+  documentId?: string;
+  title: string;
+  signatureClass: number;
   emails: string;
   actionChoice: "prepare" | "prepare_send";
   autoRun: boolean;

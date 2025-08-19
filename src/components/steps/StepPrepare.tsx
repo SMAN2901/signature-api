@@ -43,6 +43,19 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
         </Select>
       </FormControl>
       <TextField
+        label="Title"
+        value={state.title}
+        onChange={(e) => dispatch({ type: "SET_FIELD", key: "title", value: e.target.value })}
+        fullWidth
+      />
+      <TextField
+        label="Signature Class"
+        type="number"
+        value={state.signatureClass}
+        onChange={(e) => dispatch({ type: "SET_FIELD", key: "signatureClass", value: Number(e.target.value) })}
+        fullWidth
+      />
+      <TextField
         label="Emails (comma-separated)"
         placeholder="a@x.com, b@y.com"
         value={state.emails}
@@ -53,7 +66,7 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
         <Button
           variant="contained"
           onClick={runPrepareOrPrepareSend}
-          disabled={s.status === "running" || !state.fileId}
+          disabled={s.status === "running" || !state.fileId || !state.title}
         >
           Run
         </Button>
