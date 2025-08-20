@@ -51,16 +51,16 @@ export default function JsonBox({ label, data }: { label: string; data: any }) {
         </IconButton>
       </Stack>
     </Stack>
-    <SyntaxHighlighter
-      language="json"
-      style={coldarkDark}
-      wrapLines={wrap}
-      wrapLongLines={wrap}
-      lineProps={{ style: { whiteSpace: wrap ? "pre-wrap" : "pre", wordBreak: wrap ? "break-word" : "normal" } }}
-      customStyle={{ margin: 0, fontSize: 16, borderRadius: 16 }}
-    >
-      {json || "—"}
-    </SyntaxHighlighter>
+      <SyntaxHighlighter
+        language="json"
+        style={coldarkDark}
+        wrapLines={wrap}
+        wrapLongLines={wrap}
+        lineProps={{ style: { whiteSpace: wrap ? "pre-wrap" : "pre", wordBreak: wrap ? "break-word" : "normal" } }}
+        customStyle={{ margin: 0, fontSize: 16, borderRadius: 16, maxHeight: 400, overflow: "auto" }}
+      >
+        {json || "—"}
+      </SyntaxHighlighter>
   </Paper>
 );
 }
