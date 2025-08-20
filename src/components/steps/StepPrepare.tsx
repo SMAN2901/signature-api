@@ -30,7 +30,7 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
         Choose an action and provide a list of recipient emails (comma-separated). If you choose <em>Prepare and Send</em>,
         Step 6 will be skipped.
       </Typography>
-      <FormControl fullWidth>
+      <FormControl fullWidth sx={{ maxWidth: 400 }}>
         <InputLabel id="action-label">Action</InputLabel>
         <Select
           labelId="action-label"
@@ -47,8 +47,9 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
         value={state.title}
         onChange={(e) => dispatch({ type: "SET_FIELD", key: "title", value: e.target.value })}
         fullWidth
+        sx={{ maxWidth: 400 }}
       />
-      <FormControl fullWidth>
+      <FormControl fullWidth sx={{ maxWidth: 400 }}>
         <InputLabel id="signature-class-label">Signature Class</InputLabel>
         <Select
           labelId="signature-class-label"
@@ -66,6 +67,7 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
         value={state.emails}
         onChange={(e) => dispatch({ type: "SET_FIELD", key: "emails", value: e.target.value })}
         fullWidth
+        sx={{ maxWidth: 400 }}
       />
       <Stack direction="row" spacing={2}>
         <Button

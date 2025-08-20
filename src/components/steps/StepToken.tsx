@@ -31,6 +31,7 @@ export default function StepToken({ state, dispatch, runToken, go, useLocalStora
             }
           }}
           fullWidth
+          sx={{ maxWidth: 400 }}
         />
         <TextField
           label="Client Secret"
@@ -45,6 +46,7 @@ export default function StepToken({ state, dispatch, runToken, go, useLocalStora
             }
           }}
           fullWidth
+          sx={{ maxWidth: 400 }}
         />
       </Stack>
       <Stack direction="row" spacing={2}>
