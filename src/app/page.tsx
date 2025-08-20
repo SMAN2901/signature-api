@@ -21,6 +21,7 @@ import {
 import { getUploadUrl, uploadFile, buildGetUploadUrlRequest } from "../services/storage";
 import Navbar from "../components/Navbar";
 import Sidenav from "../components/Sidenav";
+import HiddenSettings from "../components/HiddenSettings";
 import { v4 as uuidv4 } from 'uuid';
 
 import { StepKey, WizardState, Action } from "../types";
@@ -132,16 +133,39 @@ function usePoller() {
 // —— Page ——
 export default function Page() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settings, setSettings] = useState({ enableAutomation: false, useLocalStorage: false });
+
   useEffect(() => {
     if (typeof window !== "undefined") {
+      const enableAutomation = localStorage.getItem("enableAutomation") === "true";
+      const useLocal = localStorage.getItem("useLocalStorage") === "true";
+      setSettings({ enableAutomation, useLocalStorage: useLocal });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storage = settings.useLocalStorage ? localStorage : sessionStorage;
       const env = (localStorage.getItem("environment") as any) || "development";
-      const cid = sessionStorage.getItem("clientId") || "";
-      const cs = sessionStorage.getItem("clientSecret") || "";
+      const cid = storage.getItem("clientId") || "";
+      const cs = storage.getItem("clientSecret") || "";
       dispatch({ type: "SET_FIELD", key: "environment", value: env });
       dispatch({ type: "SET_FIELD", key: "clientId", value: cid });
       dispatch({ type: "SET_FIELD", key: "clientSecret", value: cs });
     }
+  }, [settings.useLocalStorage]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "z") {
+        setSettingsOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, []);
+
   const wait = useDelay();
   const poller = usePoller();
   const [snack, setSnack] = useState<string | null>(null);
@@ -349,6 +373,7 @@ export default function Page() {
           dispatch={dispatch}
           runToken={runToken}
           go={go}
+          useLocalStorage={settings.useLocalStorage}
         />
       )}
       {state.current === "uploadUrl" && (
@@ -409,7 +434,14 @@ export default function Page() {
         <Navbar />
         <Box sx={{ flex: 1, display: "flex", overflow: "hidden" }}>
           <Box sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0, overflow: "auto" }}>
-            <Sidenav state={state} dispatch={dispatch} stepsOrder={stepsOrder} runAll={runAll} go={go} />
+            <Sidenav
+              state={state}
+              dispatch={dispatch}
+              stepsOrder={stepsOrder}
+              runAll={runAll}
+              go={go}
+              automationEnabled={settings.enableAutomation}
+            />
           </Box>
           {Main}
         </Box>
@@ -419,6 +451,12 @@ export default function Page() {
           {snack}
         </Alert>
       </Snackbar>
+      <HiddenSettings
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
+        settings={settings}
+        setSettings={setSettings}
+      />
     </>
   );
 }

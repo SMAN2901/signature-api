@@ -27,37 +27,44 @@ interface SidenavProps {
   stepsOrder: { key: StepKey; label: string; icon: React.ReactNode }[];
   runAll: () => Promise<void>;
   go: (step: StepKey) => void;
+  automationEnabled: boolean;
 }
 
-export default function Sidenav({ state, dispatch, stepsOrder, runAll, go }: SidenavProps) {
+export default function Sidenav({ state, dispatch, stepsOrder, runAll, go, automationEnabled }: SidenavProps) {
   return (
     <Paper elevation={0} sx={{ p: 2, height: "100%", overflow: "auto", borderRadius: 0 }}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
         <Typography variant="subtitle1">Steps</Typography>
-        <Tooltip title="Run all steps automatically with delays">
-          <span>
-            <Button
-              size="small"
-              variant="contained"
-              startIcon={<PlayCircleIcon />}
-              onClick={runAll}
-              disabled={state.autoRun}
-            >
-              Execute All
-            </Button>
-          </span>
-        </Tooltip>
+        {automationEnabled && (
+          <Tooltip title="Run all steps automatically with delays">
+            <span>
+              <Button
+                size="small"
+                variant="contained"
+                startIcon={<PlayCircleIcon />}
+                onClick={runAll}
+                disabled={state.autoRun}
+              >
+                Execute All
+              </Button>
+            </span>
+          </Tooltip>
+        )}
       </Stack>
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-        <TextField
-          label="Automation Delay (ms)"
-          type="number"
-          size="small"
-          value={state.autoDelayMs}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "autoDelayMs", value: Number(e.target.value) })}
-          fullWidth
-        />
-      </Stack>
+      {automationEnabled && (
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+          <TextField
+            label="Automation Delay (ms)"
+            type="number"
+            size="small"
+            value={state.autoDelayMs}
+            onChange={(e) =>
+              dispatch({ type: "SET_FIELD", key: "autoDelayMs", value: Number(e.target.value) })
+            }
+            fullWidth
+          />
+        </Stack>
+      )}
       <Divider sx={{ mb: 2 }} />
       <List>
         {stepsOrder.map(({ key, label, icon }) => {

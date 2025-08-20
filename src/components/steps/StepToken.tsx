@@ -9,9 +9,10 @@ interface Props {
   dispatch: React.Dispatch<Action>;
   runToken: () => void;
   go: (step: StepKey) => void;
+  useLocalStorage: boolean;
 }
 
-export default function StepToken({ state, dispatch, runToken, go }: Props) {
+export default function StepToken({ state, dispatch, runToken, go, useLocalStorage }: Props) {
   const s = state.steps.token;
   return (
     <Stack spacing={2}>
@@ -25,7 +26,8 @@ export default function StepToken({ state, dispatch, runToken, go }: Props) {
             const v = e.target.value;
             dispatch({ type: "SET_FIELD", key: "clientId", value: v });
             if (typeof window !== "undefined") {
-              sessionStorage.setItem("clientId", v);
+              const storage = useLocalStorage ? localStorage : sessionStorage;
+              storage.setItem("clientId", v);
             }
           }}
           fullWidth
@@ -38,7 +40,8 @@ export default function StepToken({ state, dispatch, runToken, go }: Props) {
             const v = e.target.value;
             dispatch({ type: "SET_FIELD", key: "clientSecret", value: v });
             if (typeof window !== "undefined") {
-              sessionStorage.setItem("clientSecret", v);
+              const storage = useLocalStorage ? localStorage : sessionStorage;
+              storage.setItem("clientSecret", v);
             }
           }}
           fullWidth
