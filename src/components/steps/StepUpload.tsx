@@ -19,7 +19,13 @@ export default function StepUpload({ state, runUpload, go }: Props) {
     <Stack spacing={2}>
       <Typography variant="h6">Step 4 — Upload File</Typography>
       <Typography variant="body2">Upload the selected PDF using the pre-signed URL.</Typography>
-      <TextField label="Selected file" value={state.fileName || "(none)"} InputProps={{ readOnly: true }} fullWidth />
+      <TextField
+        label="Selected file"
+        value={state.fileName || "(none)"}
+        InputProps={{ readOnly: true }}
+        fullWidth
+        sx={{ maxWidth: 400 }}
+      />
       <Stack direction="row" spacing={2}>
         <Button
           variant="contained"

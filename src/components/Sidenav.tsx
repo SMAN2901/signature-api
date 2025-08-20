@@ -13,6 +13,8 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
@@ -21,57 +23,83 @@ import ErrorIcon from "@mui/icons-material/Error";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import { WizardState, Action, StepKey } from "../types";
 
+interface Settings {
+  enableAutomation: boolean;
+  useLocalStorage: boolean;
+}
+
 interface SidenavProps {
   state: WizardState;
   dispatch: React.Dispatch<Action>;
   stepsOrder: { key: StepKey; label: string; icon: React.ReactNode }[];
   runAll: () => Promise<void>;
   go: (step: StepKey) => void;
-  automationEnabled: boolean;
+  settings: Settings;
+  setSettings: (s: Settings) => void;
 }
 
-export default function Sidenav({ state, dispatch, stepsOrder, runAll, go, automationEnabled }: SidenavProps) {
+export default function Sidenav({ state, dispatch, stepsOrder, runAll, go, settings, setSettings }: SidenavProps) {
+  const handleToggle = (key: keyof Settings) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.checked;
+    const next = { ...settings, [key]: value };
+    setSettings(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem(key, String(value));
+    }
+  };
+
   return (
     <Paper elevation={0} sx={{ p: 2, height: "100%", overflow: "auto", borderRadius: 0 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-        <Typography variant="subtitle1">Steps</Typography>
-        {automationEnabled && (
-          <Tooltip title="Run all steps automatically with delays">
-            <span>
-              <Button
-                size="small"
-                variant="contained"
-                startIcon={<PlayCircleIcon />}
-                onClick={runAll}
-                disabled={state.autoRun}
-              >
-                Execute All
-              </Button>
-            </span>
-          </Tooltip>
-        )}
-      </Stack>
-      {automationEnabled && (
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-          <TextField
-            label="Automation Delay (ms)"
-            type="number"
-            size="small"
-            value={state.autoDelayMs}
-            onChange={(e) =>
-              dispatch({ type: "SET_FIELD", key: "autoDelayMs", value: Number(e.target.value) })
-            }
-            fullWidth
+      <Stack spacing={2}>
+        <Stack spacing={1}>
+          <Typography variant="subtitle1">Settings</Typography>
+          <FormControlLabel
+            control={<Switch checked={settings.enableAutomation} onChange={handleToggle("enableAutomation")} />}
+            label="Enable Automation"
           />
+          <FormControlLabel
+            control={<Switch checked={settings.useLocalStorage} onChange={handleToggle("useLocalStorage")} />}
+            label="Use local storage"
+          />
+          {settings.enableAutomation && (
+            <TextField
+              label="Automation Delay (ms)"
+              type="number"
+              size="small"
+              value={state.autoDelayMs}
+              onChange={(e) =>
+                dispatch({ type: "SET_FIELD", key: "autoDelayMs", value: Number(e.target.value) })
+              }
+              fullWidth
+              sx={{ maxWidth: 400 }}
+            />
+          )}
         </Stack>
-      )}
-      <Divider sx={{ mb: 2 }} />
-      <List>
-        {stepsOrder.map(({ key, label, icon }) => {
-          const s = state.steps[key].status;
-          const ActiveIcon =
-            s === "success"
-              ? CheckCircleIcon
+        <Divider />
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Typography variant="subtitle1">Steps</Typography>
+          {settings.enableAutomation && (
+            <Tooltip title="Run all steps automatically with delays">
+              <span>
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<PlayCircleIcon />}
+                  onClick={runAll}
+                  disabled={state.autoRun}
+                >
+                  Execute All
+                </Button>
+              </span>
+            </Tooltip>
+          )}
+        </Stack>
+        <List>
+          {stepsOrder.map(({ key, label, icon }) => {
+            const s = state.steps[key].status;
+            const ActiveIcon =
+              s === "success"
+                ? CheckCircleIcon
               : s === "error"
               ? ErrorIcon
               : s === "running"
@@ -95,7 +123,8 @@ export default function Sidenav({ state, dispatch, stepsOrder, runAll, go, autom
             </ListItem>
           );
         })}
-      </List>
+        </List>
+      </Stack>
     </Paper>
   );
 }

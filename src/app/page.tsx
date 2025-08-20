@@ -21,7 +21,6 @@ import {
 import { getUploadUrl, uploadFile, buildGetUploadUrlRequest } from "../services/storage";
 import Navbar from "../components/Navbar";
 import Sidenav from "../components/Sidenav";
-import HiddenSettings from "../components/HiddenSettings";
 import { v4 as uuidv4 } from 'uuid';
 
 import { StepKey, WizardState, Action } from "../types";
@@ -133,7 +132,6 @@ function usePoller() {
 // —— Page ——
 export default function Page() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState({ enableAutomation: false, useLocalStorage: false });
 
   useEffect(() => {
@@ -156,15 +154,6 @@ export default function Page() {
     }
   }, [settings.useLocalStorage]);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "z") {
-        setSettingsOpen(true);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, []);
 
   const wait = useDelay();
   const poller = usePoller();
@@ -440,7 +429,8 @@ export default function Page() {
               stepsOrder={stepsOrder}
               runAll={runAll}
               go={go}
-              automationEnabled={settings.enableAutomation}
+              settings={settings}
+              setSettings={setSettings}
             />
           </Box>
           {Main}
@@ -451,12 +441,6 @@ export default function Page() {
           {snack}
         </Alert>
       </Snackbar>
-      <HiddenSettings
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        settings={settings}
-        setSettings={setSettings}
-      />
     </>
   );
 }

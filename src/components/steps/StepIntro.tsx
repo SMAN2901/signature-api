@@ -17,7 +17,7 @@ export default function StepIntro({ state, dispatch, onGetStarted }: Props) {
         Choose an environment and click <strong>Get Started</strong> to proceed. Client credentials will be entered in
         the next step. All data is kept in memory only; reloading the page will reset the wizard.
       </Typography>
-      <FormControl fullWidth>
+      <FormControl fullWidth sx={{ maxWidth: 400 }}>
         <InputLabel id="env-label">Environment</InputLabel>
         <Select
           labelId="env-label"

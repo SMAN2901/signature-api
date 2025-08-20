@@ -19,7 +19,13 @@ export default function StepUploadUrl({ state, dispatch, runGetUploadUrl, go }: 
       <Typography variant="h6">Step 3 — Get Upload Url</Typography>
       <Typography variant="body2">Choose a PDF and request a pre-signed URL for upload.</Typography>
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-        <Button component="label" variant="contained" startIcon={<CloudUploadIcon />}>Choose PDF
+        <Button
+          component="label"
+          variant="contained"
+          startIcon={<CloudUploadIcon />}
+          sx={{ whiteSpace: "nowrap" }}
+        >
+          Choose PDF
           <input
             type="file"
             accept="application/pdf"
@@ -31,7 +37,13 @@ export default function StepUploadUrl({ state, dispatch, runGetUploadUrl, go }: 
             }}
           />
         </Button>
-        <TextField label="Selected file" value={state.fileName || "(none)"} InputProps={{ readOnly: true }} fullWidth />
+        <TextField
+          label="Selected file"
+          value={state.fileName || "(none)"}
+          InputProps={{ readOnly: true }}
+          fullWidth
+          sx={{ maxWidth: 400 }}
+        />
       </Stack>
       <Stack direction="row" spacing={2}>
         <Button
