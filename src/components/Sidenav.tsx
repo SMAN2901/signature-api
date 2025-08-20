@@ -16,10 +16,10 @@ import {
   FormControlLabel,
   Switch,
   Box,
+  CircularProgress,
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
-import PendingIcon from "@mui/icons-material/Pending";
 import ErrorIcon from "@mui/icons-material/Error";
 import PlayCircleIcon from "@mui/icons-material/PlayCircle";
 import { WizardState, Action, StepKey } from "../types";
@@ -86,14 +86,6 @@ export default function Sidenav({ state, dispatch, stepsOrder, runAll, go, setti
         <List>
           {stepsOrder.map(({ key, label, icon }) => {
             const s = state.steps[key].status;
-            const ActiveIcon =
-              s === "success"
-                ? CheckCircleIcon
-                : s === "error"
-                ? ErrorIcon
-                : s === "running"
-                ? PendingIcon
-                : RadioButtonUncheckedIcon;
             const color =
               s === "success"
                 ? "success.main"
@@ -102,12 +94,22 @@ export default function Sidenav({ state, dispatch, stepsOrder, runAll, go, setti
                 : s === "running"
                 ? "info.main"
                 : "text.disabled";
+            const activeIcon =
+              s === "success" ? (
+                <CheckCircleIcon fontSize="small" sx={{ color }} />
+              ) : s === "error" ? (
+                <ErrorIcon fontSize="small" sx={{ color }} />
+              ) : s === "running" ? (
+                <CircularProgress size={16} sx={{ color }} />
+              ) : (
+                <RadioButtonUncheckedIcon fontSize="small" sx={{ color }} />
+              );
             return (
               <ListItem key={key} disablePadding>
                 <ListItemButton selected={state.current === key} onClick={() => go(key)} sx={{ borderRadius: 1 }}>
                   <ListItemIcon>{icon}</ListItemIcon>
                   <ListItemText primary={label} />
-                  <ActiveIcon fontSize="small" sx={{ color }} />
+                  {activeIcon}
                 </ListItemButton>
               </ListItem>
             );

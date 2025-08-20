@@ -5,6 +5,7 @@ import {
   InputLabel,
   MenuItem,
   Select,
+  Grid,
   Stack,
   TextField,
   Typography,
@@ -30,45 +31,57 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
         Choose an action and provide a list of recipient emails (comma-separated). If you choose <em>Prepare and Send</em>,
         Step 6 will be skipped.
       </Typography>
-      <FormControl fullWidth sx={{ maxWidth: 400 }}>
-        <InputLabel id="action-label">Action</InputLabel>
-        <Select
-          labelId="action-label"
-          label="Action"
-          value={state.actionChoice}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "actionChoice", value: e.target.value })}
-        >
-          <MenuItem value="prepare">Prepare Contract</MenuItem>
-          <MenuItem value="prepare_send">Prepare and Send Contract</MenuItem>
-        </Select>
-      </FormControl>
-      <TextField
-        label="Title"
-        value={state.title}
-        onChange={(e) => dispatch({ type: "SET_FIELD", key: "title", value: e.target.value })}
-        fullWidth
-        sx={{ maxWidth: 400 }}
-      />
-      <FormControl fullWidth sx={{ maxWidth: 400 }}>
-        <InputLabel id="signature-class-label">Signature Class</InputLabel>
-        <Select
-          labelId="signature-class-label"
-          label="Signature Class"
-          value={state.signatureClass}
-          onChange={(e) => dispatch({ type: "SET_FIELD", key: "signatureClass", value: Number(e.target.value) })}
-        >
-          <MenuItem value={0}>Simple</MenuItem>
-          <MenuItem value={9}>Advanced</MenuItem>
-        </Select>
-      </FormControl>
-      <TextField
-        label="Emails (comma-separated)"
-        placeholder="a@x.com, b@y.com"
-        value={state.emails}
-        onChange={(e) => dispatch({ type: "SET_FIELD", key: "emails", value: e.target.value })}
-        fullWidth
-        sx={{ maxWidth: 400 }}
-      />
+      <Grid container spacing={2}>
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth size="small" sx={{ maxWidth: 400 }}>
+            <InputLabel id="action-label">Action</InputLabel>
+            <Select
+              size="small"
+              labelId="action-label"
+              label="Action"
+              value={state.actionChoice}
+              onChange={(e) => dispatch({ type: "SET_FIELD", key: "actionChoice", value: e.target.value })}
+            >
+              <MenuItem value="prepare">Prepare Contract</MenuItem>
+              <MenuItem value="prepare_send">Prepare and Send Contract</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            label="Title"
+            value={state.title}
+            onChange={(e) => dispatch({ type: "SET_FIELD", key: "title", value: e.target.value })}
+            fullWidth
+            sx={{ maxWidth: 400 }}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <FormControl fullWidth size="small" sx={{ maxWidth: 400 }}>
+            <InputLabel id="signature-class-label">Signature Class</InputLabel>
+            <Select
+              size="small"
+              labelId="signature-class-label"
+              label="Signature Class"
+              value={state.signatureClass}
+              onChange={(e) => dispatch({ type: "SET_FIELD", key: "signatureClass", value: Number(e.target.value) })}
+            >
+              <MenuItem value={0}>Simple</MenuItem>
+              <MenuItem value={9}>Advanced</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            label="Emails (comma-separated)"
+            placeholder="a@x.com, b@y.com"
+            value={state.emails}
+            onChange={(e) => dispatch({ type: "SET_FIELD", key: "emails", value: e.target.value })}
+            fullWidth
+            sx={{ maxWidth: 400 }}
+          />
+        </Grid>
+      </Grid>
       <Stack direction="row" spacing={2}>
         <Button
           variant="contained"
