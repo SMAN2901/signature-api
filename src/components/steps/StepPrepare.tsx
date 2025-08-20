@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import {
   Button,
@@ -71,14 +72,15 @@ export default function StepPrepare({ state, dispatch, runPrepareOrPrepareSend, 
             </Select>
           </FormControl>
         </Grid>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <TextField
             label="Emails (comma-separated)"
             placeholder="a@x.com, b@y.com"
             value={state.emails}
-            onChange={(e) => dispatch({ type: "SET_FIELD", key: "emails", value: e.target.value })}
+            onChange={(e) =>
+              dispatch({ type: "SET_FIELD", key: "emails", value: e.target.value })
+            }
             fullWidth
-            sx={{ maxWidth: 400 }}
           />
         </Grid>
       </Grid>
