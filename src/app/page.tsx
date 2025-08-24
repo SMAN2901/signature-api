@@ -263,7 +263,15 @@ export default function Page() {
           dispatch({
             type: "SET_STEP",
             step: "prepare",
-            patch: { polling: { isActive: true, logs: [ ...(state.steps.prepare.polling?.logs || []), payload ] } },
+            patch: {
+              polling: {
+                isActive: true,
+                logs: [
+                  ...(state.steps.prepare.polling?.logs || []),
+                  ...(Array.isArray(payload) ? payload : [payload]),
+                ],
+              },
+            },
           });
         },
         () => getEvents({ processId, DocumentId: documentId }, state.token),
@@ -301,7 +309,15 @@ export default function Page() {
           dispatch({
             type: "SET_STEP",
             step: "send",
-            patch: { polling: { isActive: true, logs: [ ...(state.steps.send.polling?.logs || []), payload ] } },
+            patch: {
+              polling: {
+                isActive: true,
+                logs: [
+                  ...(state.steps.send.polling?.logs || []),
+                  ...(Array.isArray(payload) ? payload : [payload]),
+                ],
+              },
+            },
           });
         },
         () => getEvents({ processId, DocumentId: state.documentId }, state.token),
