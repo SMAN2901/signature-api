@@ -5,13 +5,12 @@ import { StepState } from "../types";
 
 interface Props {
   polling?: StepState["polling"];
-  status?: StepState["status"];
   onStop?: () => void;
 }
 
-export default function PollingPanel({ polling, status, onStop }: Props) {
+export default function PollingPanel({ polling, onStop }: Props) {
   if (!polling) return null;
-  const showSpinner = polling.isActive && onStop && status === "running";
+  const showSpinner = polling.isActive && !!onStop;
   return (
     <Stack spacing={1}>
       {showSpinner && (
