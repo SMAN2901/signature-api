@@ -24,11 +24,13 @@ export const ThemeContextProvider = ({ children }: { children: React.ReactNode }
     const stored = localStorage.getItem('themeMode') as PaletteMode | null;
     if (stored) {
       setMode(stored);
+      document.body.setAttribute("data-theme", stored);
     } else {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const initialMode: PaletteMode = prefersDark ? 'dark' : 'light';
       setMode(initialMode);
       localStorage.setItem('themeMode', initialMode);
+      document.body.setAttribute("data-theme", initialMode);
     }
   }, []);
 
@@ -36,6 +38,7 @@ export const ThemeContextProvider = ({ children }: { children: React.ReactNode }
     setMode((prev) => {
       const next = prev === 'light' ? 'dark' : 'light';
       localStorage.setItem('themeMode', next);
+      document.body.setAttribute("data-theme", next);
       return next;
     });
   };
