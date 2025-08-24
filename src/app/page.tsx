@@ -69,7 +69,10 @@ function reducer(state: WizardState, action: Action): WizardState {
       return { ...state, [action.key]: action.value } as WizardState;
     case "SET_STEP": {
       const prev = state.steps[action.step] || { status: "idle" };
-      return { ...state, steps: { ...state.steps, [action.step]: { ...prev, ...action.patch } } };
+      const patch = action.patch.polling
+        ? { ...action.patch, polling: { ...prev.polling, ...action.patch.polling } }
+        : action.patch;
+      return { ...state, steps: { ...state.steps, [action.step]: { ...prev, ...patch } } };
     }
     case "GOTO":
       return { ...state, current: action.step };
@@ -283,6 +286,8 @@ export default function Page() {
         }
       );
 
+      dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: false } } });
+
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success" } });
       setSnack(state.actionChoice === "prepare_send" ? "Prepared and sent." : "Prepared.");
     } catch (e: any) {
@@ -323,6 +328,8 @@ export default function Page() {
         () => getEvents({ processId, DocumentId: state.documentId }, state.token),
         (p) => p.status === "completed"
       );
+
+      dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: false } } });
 
       setSnack("Contract sent via email.");
     } catch (e: any) {
