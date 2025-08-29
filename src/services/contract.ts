@@ -63,13 +63,17 @@ export async function prepareAndSendContract(body: PrepareBody, token?: string) 
   return res.data;
 }
 
-export function buildSendContractRequest(body: any) {
+export interface SendBody {
+  DocumentId: string;
+}
+
+export function buildSendContractRequest(body: SendBody) {
   const { baseUrl, sendContractApi } = getEnv();
   const url = `${baseUrl}/${sendContractApi}`;
   return { url, body };
 }
 
-export async function sendContract(body: any, token?: string) {
+export async function sendContract(body: SendBody, token?: string) {
   const { url, body: payload } = buildSendContractRequest(body);
   const res = await axios.post(url, payload, {
     headers: token ? { Authorization: `bearer ${token}` } : undefined,
@@ -78,18 +82,21 @@ export async function sendContract(body: any, token?: string) {
 }
 
 interface GetEventsBody {
-  processId: string;
-  DocumentId?: string;
+  DocumentId: string;
+  processId?: string;
 }
 
-export async function getEvents({ processId, DocumentId }: GetEventsBody, token?: string) {
+export async function getEvents<T = unknown>(
+  { processId, DocumentId }: GetEventsBody,
+  token?: string
+): Promise<T> {
   const { baseUrl, getEventsApi } = getEnv();
   const url = `${baseUrl}/${getEventsApi}`;
-  const payload: any = { processId };
-  if (DocumentId) {
-    payload.DocumentId = DocumentId;
+  const payload: GetEventsBody = { DocumentId };
+  if (processId) {
+    payload.processId = processId;
   }
-  const res = await axios.post(url, payload, {
+  const res = await axios.post<T>(url, payload, {
     headers: token ? { Authorization: `bearer ${token}` } : undefined,
   });
   return res.data;

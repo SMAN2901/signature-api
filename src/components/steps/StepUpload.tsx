@@ -11,10 +11,8 @@ interface Props {
 
 export default function StepUpload({ state, runUpload, go }: Props) {
   const s = state.steps.upload;
-  const uploadUrl =
-    state.uploadUrl ||
-    (state.steps.uploadUrl.response as any)?.url ||
-    (state.steps.uploadUrl.response as any)?.uploadUrl;
+  const uploadRes = state.steps.uploadUrl.response as { url?: string; uploadUrl?: string } | undefined;
+  const uploadUrl = state.uploadUrl || uploadRes?.url || uploadRes?.uploadUrl;
   return (
     <Stack spacing={2}>
       <Typography variant="h6">Step 4 — Upload File</Typography>
@@ -37,7 +35,7 @@ export default function StepUpload({ state, runUpload, go }: Props) {
       </Stack>
       <JsonBox label="Request" data={state.steps.upload.request} />
       <JsonBox label="Response" data={state.steps.upload.response} />
-      {state.steps.upload.error && <JsonBox label="Error" data={state.steps.upload.error} />}
+      {!!state.steps.upload.error && <JsonBox label="Error" data={state.steps.upload.error} />}
       <Stack direction="row" spacing={2}>
         <Button variant="outlined" onClick={() => go("prepare")}>Next</Button>
       </Stack>

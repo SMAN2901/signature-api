@@ -57,7 +57,7 @@ export default function StepUploadUrl({ state, dispatch, runGetUploadUrl, go }: 
       </Stack>
       <JsonBox label="Request" data={state.steps.uploadUrl.request} />
       <JsonBox label="Response" data={state.steps.uploadUrl.response} />
-      {s.error && <JsonBox label="Error" data={s.error} />}
+      {!!s.error && <JsonBox label="Error" data={s.error} />}
       <Stack direction="row" spacing={2}>
         <Button variant="outlined" onClick={() => go("upload")}>Next</Button>
       </Stack>

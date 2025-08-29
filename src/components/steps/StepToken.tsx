@@ -55,7 +55,7 @@ export default function StepToken({ state, dispatch, runToken, go, useLocalStora
       </Stack>
       <JsonBox label="Request" data={state.steps.token.request} />
       <JsonBox label="Response" data={state.steps.token.response} />
-      {s.error && <JsonBox label="Error" data={s.error} />}
+      {!!s.error && <JsonBox label="Error" data={s.error} />}
       <Stack direction="row" spacing={2}>
         <Button variant="outlined" onClick={() => go("uploadUrl")}>Next</Button>
       </Stack>

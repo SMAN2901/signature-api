@@ -32,6 +32,13 @@ import StepPrepare from "../components/steps/StepPrepare";
 import StepSend from "../components/steps/StepSend";
 import StepDone from "../components/steps/StepDone";
 
+interface PollingEvent {
+  Status?: string;
+  Success?: boolean;
+  status?: string;
+  [key: string]: unknown;
+}
+
 const initialState: WizardState = {
   current: "intro",
   environment: "development",
@@ -42,7 +49,6 @@ const initialState: WizardState = {
   fileName: undefined,
   uploadUrl: undefined,
   fileId: undefined,
-  processId: undefined,
   documentId: undefined,
   title: "",
   signatureClass: 0,
@@ -85,36 +91,35 @@ function useDelay() {
 }
 
 // —— Polling helper ——
-function usePoller() {
-  const timerRef = useRef<
-    Record<string, { timer: ReturnType<typeof setInterval>; resolve?: () => void }>
-  >({});
+  function usePoller() {
+    const timerRef = useRef<
+      Record<string, { timer: ReturnType<typeof setInterval>; resolve?: () => void }>
+    >({});
 
   useEffect(() => {
     const timers = timerRef.current;
-    return () => {
-      // cleanup any intervals on unmount
-      Object.values(timers).forEach(({ timer }) => clearInterval(timer));
-    };
+      return () => {
+        // cleanup intervals on unmount
+        Object.values(timers).forEach(({ timer }) => clearInterval(timer));
+      };
   }, []);
 
-  const start = useCallback(
-    (
-      key: StepKey,
-      id: string,
-      onTick: (payload: any) => void,
-      fetcher: () => Promise<any>,
-      isDone: (payload: any) => boolean,
-      intervalMs = 5000
-    ) => {
-      return new Promise<void>((resolve, reject) => {
+    const start = useCallback(
+      <T,>(
+        key: StepKey,
+        onTick: (payload: T) => void,
+        fetcher: () => Promise<T>,
+        isDone: (payload: T) => boolean,
+        intervalMs = 5000
+      ) => {
+        return new Promise<T>((resolve, reject) => {
         const exec = async () => {
           try {
             // Kick an immediate tick, then interval
             const first = await fetcher();
             onTick(first);
             if (isDone(first)) {
-              resolve();
+              resolve(first);
               return;
             }
             const t = setInterval(async () => {
@@ -124,7 +129,7 @@ function usePoller() {
                 if (isDone(data)) {
                   clearInterval(t);
                   delete timerRef.current[key];
-                  resolve();
+                  resolve(data);
                 }
               } catch (err) {
                 clearInterval(t);
@@ -132,7 +137,7 @@ function usePoller() {
                 reject(err);
               }
             }, intervalMs);
-            timerRef.current[key] = { timer: t, resolve };
+            timerRef.current[key] = { timer: t, resolve: () => resolve(undefined as T) };
           } catch (err) {
             reject(err);
           }
@@ -171,7 +176,9 @@ export default function Page() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storage = settings.useLocalStorage ? localStorage : sessionStorage;
-      const env = (localStorage.getItem("environment") as any) || "development";
+      const env =
+        (localStorage.getItem("environment") as WizardState["environment"] | null) ||
+        "development";
       const cid = storage.getItem("clientId") || "";
       const cs = storage.getItem("clientSecret") || "";
       dispatch({ type: "SET_FIELD", key: "environment", value: env });
@@ -213,7 +220,7 @@ export default function Page() {
       dispatch({ type: "SET_FIELD", key: "token", value: data.access_token });
       dispatch({ type: "SET_STEP", step: "token", patch: { status: "success", response: data } });
       setSnack("Token acquired.");
-    } catch (e: any) {
+    } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "token", patch: { status: "error", error: String(e) } });
     }
   }, [state.clientId, state.clientSecret]);
@@ -229,7 +236,7 @@ export default function Page() {
       dispatch({ type: "SET_FIELD", key: "fileId", value: data.FileId });
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "success", response: data } });
       setSnack("Upload URL acquired.");
-    } catch (e: any) {
+    } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "error", error: String(e) } });
     }
   }, [state.fileName, state.fileId, state.token]);
@@ -239,10 +246,11 @@ export default function Page() {
       setSnack("Please choose a PDF first.");
       return;
     }
-    const uploadUrl =
-      state.uploadUrl ||
-      (state.steps.uploadUrl.response as any)?.url ||
-      (state.steps.uploadUrl.response as any)?.uploadUrl;
+    const uploadRes = state.steps.uploadUrl.response as {
+      url?: string;
+      uploadUrl?: string;
+    } | undefined;
+    const uploadUrl = state.uploadUrl || uploadRes?.url || uploadRes?.uploadUrl;
     if (!uploadUrl) {
       setSnack("Please get the upload URL first.");
       return;
@@ -253,7 +261,7 @@ export default function Page() {
       const data = await uploadFile(uploadUrl, state.file);
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "success", response: data } });
       setSnack("File uploaded.");
-    } catch (e: any) {
+    } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "upload", patch: { status: "error", error: String(e) } });
     }
   }, [state.file, state.uploadUrl, state.steps.uploadUrl]);
@@ -272,19 +280,17 @@ export default function Page() {
         state.actionChoice === "prepare_send"
           ? await prepareAndSendContract(body, state.token)
           : await prepareContract(body, state.token);
-      const processId = data.Result?.ProcessId || data.processId;
-      const documentId = data.Result?.DocumentId || data.documentId;
-      dispatch({ type: "SET_FIELD", key: "processId", value: processId });
-      if (documentId) {
-        dispatch({ type: "SET_FIELD", key: "documentId", value: documentId });
+      const documentId = data.Result?.DocumentId || data.documentId || data.DocumentId;
+      if (!documentId) {
+        throw new Error("DocumentId missing from response");
       }
+      dispatch({ type: "SET_FIELD", key: "documentId", value: documentId });
       dispatch({ type: "SET_STEP", step: "prepare", patch: { response: data } });
 
       // Polling for prepare/prepare+send
       dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [] } } });
-      await poller.start(
+      const finalEvents = await poller.start<PollingEvent | PollingEvent[]>(
         "prepare",
-        processId,
         (payload) => {
           dispatch({
             type: "SET_STEP",
@@ -300,20 +306,39 @@ export default function Page() {
             },
           });
         },
-        () => getEvents({ processId, DocumentId: documentId }, state.token),
+        () =>
+          getEvents<PollingEvent | PollingEvent[]>({ DocumentId: documentId }, state.token),
         (events) => {
           return (
             Array.isArray(events) &&
-            events.some((e: any) => e.Status === "preparation_success" && e.Success === true)
+            events.some(
+              (e) =>
+                (e.Status === "preparation_success" && e.Success === true) ||
+                e.Status === "preperation_failed"
+            )
           );
         }
       );
+      dispatch({
+        type: "SET_STEP",
+        step: "prepare",
+        patch: { polling: { isActive: false, logs: state.steps.prepare.polling?.logs || [] } },
+      });
 
-      dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: false } } });
-
-      dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success" } });
-      setSnack(state.actionChoice === "prepare_send" ? "Prepared and sent." : "Prepared.");
-    } catch (e: any) {
+      const failed = Array.isArray(finalEvents)
+        ? finalEvents.some((e) => e.Status === "preperation_failed")
+        : finalEvents?.Status === "preperation_failed";
+      if (failed) {
+        dispatch({
+          type: "SET_STEP",
+          step: "prepare",
+          patch: { status: "error", error: "Preparation failed." },
+        });
+      } else {
+        dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "success" } });
+        setSnack(state.actionChoice === "prepare_send" ? "Prepared and sent." : "Prepared.");
+      }
+    } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "error", error: String(e) } });
     }
   }, [state.actionChoice, state.emails, state.fileId, state.title, state.signatureClass, state.token, state.steps.prepare.polling, poller]);
@@ -321,18 +346,16 @@ export default function Page() {
   const runSendOnly = useCallback(async () => {
     try {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "running", error: undefined } });
-      const body = { DocumentId: state.documentId };
+      const body = { DocumentId: state.documentId! };
       const { url } = buildSendContractRequest(body);
       dispatch({ type: "SET_STEP", step: "send", patch: { request: { url, body } } });
       const data = await sendContract(body, state.token);
-      const processId = data.Result?.ProcessId || data.processId;
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "success", response: data } });
 
       // Polling for send
       dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [] } } });
-      await poller.start(
+      await poller.start<{ status: string }>(
         "send",
-        processId,
         (payload) => {
           dispatch({
             type: "SET_STEP",
@@ -348,14 +371,17 @@ export default function Page() {
             },
           });
         },
-        () => getEvents({ processId, DocumentId: state.documentId }, state.token),
+        () => getEvents<{ status: string }>({ DocumentId: state.documentId! }, state.token),
         (p) => p.status === "completed"
       );
-
-      dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: false } } });
+      dispatch({
+        type: "SET_STEP",
+        step: "send",
+        patch: { polling: { isActive: false, logs: state.steps.send.polling?.logs || [] } },
+      });
 
       setSnack("Contract sent via email.");
-    } catch (e: any) {
+    } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "error", error: String(e) } });
     }
   }, [state.documentId, state.token, state.steps.send.polling, poller]);
