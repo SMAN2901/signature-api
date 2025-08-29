@@ -86,17 +86,20 @@ function useDelay() {
 
 // —— Polling helper ——
 function usePoller() {
-  const timerRef = useRef<Record<string, any>>({});
+  const timerRef = useRef<
+    Record<string, { timer: ReturnType<typeof setInterval>; resolve?: () => void }>
+  >({});
 
   useEffect(() => {
+    const timers = timerRef.current;
     return () => {
       // cleanup any intervals on unmount
-      Object.values(timerRef.current).forEach((id) => clearInterval(id));
+      Object.values(timers).forEach(({ timer }) => clearInterval(timer));
     };
   }, []);
 
   const start = useCallback(
-    async (
+    (
       key: StepKey,
       id: string,
       onTick: (payload: any) => void,
@@ -104,27 +107,47 @@ function usePoller() {
       isDone: (payload: any) => boolean,
       intervalMs = 5000
     ) => {
-      // Kick an immediate tick, then interval
-      const first = await fetcher();
-      onTick(first);
-      if (isDone(first)) return;
-      const t = setInterval(async () => {
-        const data = await fetcher();
-        onTick(data);
-        if (isDone(data)) {
-          clearInterval(t);
-          delete timerRef.current[key];
-        }
-      }, intervalMs);
-      timerRef.current[key] = t;
+      return new Promise<void>((resolve, reject) => {
+        const exec = async () => {
+          try {
+            // Kick an immediate tick, then interval
+            const first = await fetcher();
+            onTick(first);
+            if (isDone(first)) {
+              resolve();
+              return;
+            }
+            const t = setInterval(async () => {
+              try {
+                const data = await fetcher();
+                onTick(data);
+                if (isDone(data)) {
+                  clearInterval(t);
+                  delete timerRef.current[key];
+                  resolve();
+                }
+              } catch (err) {
+                clearInterval(t);
+                delete timerRef.current[key];
+                reject(err);
+              }
+            }, intervalMs);
+            timerRef.current[key] = { timer: t, resolve };
+          } catch (err) {
+            reject(err);
+          }
+        };
+        exec();
+      });
     },
     []
   );
 
   const stop = useCallback((key: StepKey) => {
-    const t = timerRef.current[key];
-    if (t) {
-      clearInterval(t);
+    const ref = timerRef.current[key];
+    if (ref) {
+      clearInterval(ref.timer);
+      ref.resolve?.();
       delete timerRef.current[key];
     }
   }, []);
