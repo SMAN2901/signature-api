@@ -163,6 +163,10 @@ function useDelay() {
 // —— Page ——
 export default function Page() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
   const [settings, setSettings] = useState({ enableAutomation: false, useLocalStorage: false });
 
   useEffect(() => {
@@ -299,7 +303,7 @@ export default function Page() {
               polling: {
                 isActive: true,
                 logs: [
-                  ...(state.steps.prepare.polling?.logs || []),
+                  ...(stateRef.current.steps.prepare.polling?.logs || []),
                   ...(Array.isArray(payload) ? payload : [payload]),
                 ],
               },
@@ -322,7 +326,12 @@ export default function Page() {
       dispatch({
         type: "SET_STEP",
         step: "prepare",
-        patch: { polling: { isActive: false, logs: state.steps.prepare.polling?.logs || [] } },
+        patch: {
+          polling: {
+            isActive: false,
+            logs: stateRef.current.steps.prepare.polling?.logs || [],
+          },
+        },
       });
 
       const failed = Array.isArray(finalEvents)
@@ -341,7 +350,7 @@ export default function Page() {
     } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "prepare", patch: { status: "error", error: String(e) } });
     }
-  }, [state.actionChoice, state.emails, state.fileId, state.title, state.signatureClass, state.token, state.steps.prepare.polling, poller]);
+  }, [state.actionChoice, state.emails, state.fileId, state.title, state.signatureClass, state.token, poller]);
 
   const runSendOnly = useCallback(async () => {
     try {
@@ -364,7 +373,7 @@ export default function Page() {
               polling: {
                 isActive: true,
                 logs: [
-                  ...(state.steps.send.polling?.logs || []),
+                  ...(stateRef.current.steps.send.polling?.logs || []),
                   ...(Array.isArray(payload) ? payload : [payload]),
                 ],
               },
@@ -377,14 +386,19 @@ export default function Page() {
       dispatch({
         type: "SET_STEP",
         step: "send",
-        patch: { polling: { isActive: false, logs: state.steps.send.polling?.logs || [] } },
+        patch: {
+          polling: {
+            isActive: false,
+            logs: stateRef.current.steps.send.polling?.logs || [],
+          },
+        },
       });
 
       setSnack("Contract sent via email.");
     } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "error", error: String(e) } });
     }
-  }, [state.documentId, state.token, state.steps.send.polling, poller]);
+  }, [state.documentId, state.token, poller]);
 
   // —— Automation ——
   const runAll = useCallback(async () => {
