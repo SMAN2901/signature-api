@@ -12,7 +12,7 @@ const SyntaxHighlighter = dynamic(
   { ssr: false }
 );
 
-export default function JsonBox({ label, data }: { label: string; data: any }) {
+export default function JsonBox({ label, data }: { label: string; data: unknown }) {
   const [wrap, setWrap] = React.useState(false);
   const json = data ? JSON.stringify(data, null, 2) : "";
   const containerRef = React.useRef<HTMLDivElement>(null);

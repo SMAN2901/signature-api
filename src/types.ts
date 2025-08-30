@@ -9,12 +9,12 @@ export type StepKey =
 
 export interface StepState {
   status: "idle" | "running" | "success" | "error";
-  request?: any;
-  response?: any;
-  error?: any;
+  request?: unknown;
+  response?: unknown;
+  error?: unknown;
   polling?: {
     isActive: boolean;
-    logs: any[];
+    logs: unknown[];
   };
 }
 
@@ -28,7 +28,6 @@ export interface WizardState {
   fileName?: string;
   uploadUrl?: string;
   fileId?: string;
-  processId?: string;
   documentId?: string;
   title: string;
   signatureClass: number;
@@ -40,6 +39,6 @@ export interface WizardState {
 }
 
 export type Action =
-  | { type: "SET_FIELD"; key: keyof WizardState; value: any }
+  | { type: "SET_FIELD"; key: keyof WizardState; value: WizardState[keyof WizardState] }
   | { type: "SET_STEP"; step: StepKey; patch: Partial<StepState> }
   | { type: "GOTO"; step: StepKey };
