@@ -238,7 +238,7 @@ export default function Page() {
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { request: { url, body } } });
       const data = await getUploadUrl(itemId, state.fileName || "file.pdf", state.token);
       dispatch({ type: "SET_FIELD", key: "uploadUrl", value: data.UploadUrl });
-      dispatch({ type: "SET_FIELD", key: "fileId", value: data.FileId });
+      dispatch({ type: "SET_FIELD", key: "fileId", value: itemId });
       dispatch({ type: "SET_STEP", step: "uploadUrl", patch: { status: "success", response: data } });
       setSnack("Upload URL acquired.");
     } catch (e: unknown) {
@@ -357,7 +357,7 @@ export default function Page() {
       const body: SendBody = {
         DocumentId: state.documentId!,
         StampCoordinates: emails.map((email, idx) => ({
-          FileId: uuidv4(),
+          FileId: state.fileId!,
           Width: 150,
           Height: 100,
           PageNumber: 0,
@@ -366,7 +366,7 @@ export default function Page() {
           SignatoryEmail: email,
         })),
         TextFieldCoordinates: emails.map((email, idx) => ({
-          FileId: uuidv4(),
+          FileId: state.fileId!,
           Width: 127.7043269230769,
           Height: 27.043269230769226,
           PageNumber: 0,
@@ -376,7 +376,7 @@ export default function Page() {
           Value: "Hello World!",
         })),
         StampPostInfoCoordinates: emails.map((email, idx) => ({
-          FileId: uuidv4(),
+          FileId: state.fileId!,
           Width: 127.7043269230769,
           Height: 27.043269230769226,
           PageNumber: 0,
@@ -441,7 +441,7 @@ export default function Page() {
     } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "error", error: String(e) } });
     }
-  }, [state.documentId, state.token, state.emails, poller]);
+  }, [state.documentId, state.token, state.emails, state.fileId, poller]);
 
   // —— Automation ——
   const runAll = useCallback(async () => {

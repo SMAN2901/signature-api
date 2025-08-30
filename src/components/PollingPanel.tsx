@@ -1,16 +1,33 @@
 import React from "react";
 import { Button, Stack, CircularProgress } from "@mui/material";
 import JsonBox from "./JsonBox";
-import { StepState } from "../types";
+import { StepKey, StepState } from "../types";
 
 interface Props {
   polling?: StepState["polling"];
   onStop?: () => void;
+  step?: StepKey;
 }
 
-export default function PollingPanel({ polling, onStop }: Props) {
+function filterLogs(logs: unknown[], step?: StepKey) {
+  if (!step) return logs;
+  return logs.filter((e) => {
+    const obj = e as Record<string, unknown>;
+    const status = String(obj["Status"] ?? "").toLowerCase();
+    if (step === "prepare") {
+      return status.startsWith("preparation");
+    }
+    if (step === "send") {
+      return status.startsWith("rolled_out");
+    }
+    return true;
+  });
+}
+
+export default function PollingPanel({ polling, onStop, step }: Props) {
   if (!polling) return null;
   const showSpinner = polling.isActive && !!onStop;
+  const logs = filterLogs(polling.logs, step);
   return (
     <Stack spacing={1}>
       {showSpinner && (
@@ -31,7 +48,7 @@ export default function PollingPanel({ polling, onStop }: Props) {
           </Button>
         </Stack>
       )}
-      <JsonBox label="Polling Events" data={polling.logs} />
+      <JsonBox label="Polling Events" data={logs} />
     </Stack>
   );
 }
