@@ -74,7 +74,6 @@ interface BaseCoordinate {
 
 interface StampCoordinate extends BaseCoordinate {
   SignatoryEmail: string;
-  SignatureImageFileId: string;
 }
 
 interface TextFieldCoordinate extends BaseCoordinate {
