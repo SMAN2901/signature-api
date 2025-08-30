@@ -63,8 +63,36 @@ export async function prepareAndSendContract(body: PrepareBody, token?: string) 
   return res.data;
 }
 
+interface BaseCoordinate {
+  FileId: string;
+  Width: number;
+  Height: number;
+  PageNumber: number;
+  X: number;
+  Y: number;
+}
+
+interface StampCoordinate extends BaseCoordinate {
+  SignatoryEmail: string;
+  SignatureImageFileId: string;
+}
+
+interface TextFieldCoordinate extends BaseCoordinate {
+  SignatoryEmail: string;
+  Value: string;
+}
+
+interface StampPostInfoCoordinate extends BaseCoordinate {
+  EntityName: string;
+  PropertyName: string;
+  SignatoryEmail: string;
+}
+
 export interface SendBody {
   DocumentId: string;
+  StampCoordinates?: StampCoordinate[];
+  TextFieldCoordinates?: TextFieldCoordinate[];
+  StampPostInfoCoordinates?: StampPostInfoCoordinate[];
 }
 
 export function buildSendContractRequest(body: SendBody) {
