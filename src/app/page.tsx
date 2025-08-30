@@ -17,6 +17,7 @@ import {
   buildPrepareContractRequest,
   buildPrepareAndSendContractRequest,
   buildSendContractRequest,
+  SendBody,
 } from "../services/contract";
 import { getUploadUrl, uploadFile, buildGetUploadUrlRequest } from "../services/storage";
 import Navbar from "../components/Navbar";
@@ -351,7 +352,47 @@ export default function Page() {
   const runSendOnly = useCallback(async () => {
     try {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "running", error: undefined } });
-      const body = { DocumentId: state.documentId! };
+
+      const emails = state.emails
+        .split(",")
+        .map((e) => e.trim())
+        .filter(Boolean);
+      const stampYStart = 100;
+      const offsetY = 150;
+
+      const body: SendBody = {
+        DocumentId: state.documentId!,
+        StampCoordinates: emails.map((email, idx) => ({
+          FileId: uuidv4(),
+          Width: 150,
+          Height: 100,
+          PageNumber: 0,
+          X: 100,
+          Y: stampYStart + idx * offsetY,
+          SignatoryEmail: email,
+        })),
+        TextFieldCoordinates: emails.map((email, idx) => ({
+          FileId: uuidv4(),
+          Width: 127.7043269230769,
+          Height: 27.043269230769226,
+          PageNumber: 0,
+          X: 300,
+          Y: stampYStart + idx * offsetY,
+          SignatoryEmail: email,
+          Value: "Hello World!",
+        })),
+        StampPostInfoCoordinates: emails.map((email, idx) => ({
+          FileId: uuidv4(),
+          Width: 127.7043269230769,
+          Height: 27.043269230769226,
+          PageNumber: 0,
+          X: 500,
+          Y: stampYStart + idx * offsetY,
+          EntityName: "AuditLog",
+          PropertyName: "{StampTime}",
+          SignatoryEmail: email,
+        })),
+      };
       const { url } = buildSendContractRequest(body);
       dispatch({ type: "SET_STEP", step: "send", patch: { request: { url, body } } });
       const data = await sendContract(body, state.token);
@@ -412,7 +453,7 @@ export default function Page() {
     } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "error", error: String(e) } });
     }
-  }, [state.documentId, state.token, poller]);
+  }, [state.documentId, state.token, state.emails, poller]);
 
   // —— Automation ——
   const runAll = useCallback(async () => {
