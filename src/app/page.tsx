@@ -303,10 +303,7 @@ export default function Page() {
             patch: {
               polling: {
                 isActive: true,
-                logs: [
-                  ...(stateRef.current.steps.prepare.polling?.logs || []),
-                  ...payload,
-                ],
+                logs: payload,
               },
             },
           });
@@ -325,10 +322,7 @@ export default function Page() {
         patch: {
           polling: {
             isActive: false,
-            logs: [
-              ...(stateRef.current.steps.prepare.polling?.logs || []),
-              ...finalEvents,
-            ],
+            logs: finalEvents,
           },
         },
       });
@@ -409,10 +403,7 @@ export default function Page() {
             patch: {
               polling: {
                 isActive: true,
-                logs: [
-                  ...(stateRef.current.steps.send.polling?.logs || []),
-                  ...payload,
-                ],
+                logs: payload,
               },
             },
           });
@@ -431,10 +422,7 @@ export default function Page() {
         patch: {
           polling: {
             isActive: false,
-            logs: [
-              ...(stateRef.current.steps.send.polling?.logs || []),
-              ...finalEvents,
-            ],
+            logs: finalEvents,
           },
         },
       });
