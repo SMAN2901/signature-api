@@ -293,7 +293,7 @@ export default function Page() {
 
       // Polling for prepare/prepare+send
       dispatch({ type: "SET_STEP", step: "prepare", patch: { polling: { isActive: true, logs: [] } } });
-      const finalEvents = await poller.start<PollingEvent | PollingEvent[]>(
+      const finalEvents = await poller.start<PollingEvent[]>(
         "prepare",
         (payload) => {
           dispatch({
@@ -304,24 +304,19 @@ export default function Page() {
                 isActive: true,
                 logs: [
                   ...(stateRef.current.steps.prepare.polling?.logs || []),
-                  ...(Array.isArray(payload) ? payload : [payload]),
+                  ...payload,
                 ],
               },
             },
           });
         },
-        () =>
-          getEvents<PollingEvent | PollingEvent[]>({ DocumentId: documentId }, state.token),
-        (events) => {
-          return (
-            Array.isArray(events) &&
-            events.some(
-              (e) =>
-                (e.Status === "preparation_success" && e.Success === true) ||
-                e.Status === "preperation_failed"
-            )
-          );
-        }
+        () => getEvents<PollingEvent[]>({ DocumentId: documentId }, state.token),
+        (events) =>
+          events.some(
+            (e) =>
+              (e.Status === "preparation_success" && e.Success === true) ||
+              e.Status === "preperation_failed"
+          )
       );
       dispatch({
         type: "SET_STEP",
@@ -331,15 +326,13 @@ export default function Page() {
             isActive: false,
             logs: [
               ...(stateRef.current.steps.prepare.polling?.logs || []),
-              ...(Array.isArray(finalEvents) ? finalEvents : [finalEvents]),
+              ...finalEvents,
             ],
           },
         },
       });
 
-      const failed = Array.isArray(finalEvents)
-        ? finalEvents.some((e) => e.Status === "preperation_failed")
-        : finalEvents?.Status === "preperation_failed";
+      const failed = finalEvents.some((e) => e.Status === "preperation_failed");
       if (failed) {
         dispatch({
           type: "SET_STEP",
@@ -362,11 +355,11 @@ export default function Page() {
       const { url } = buildSendContractRequest(body);
       dispatch({ type: "SET_STEP", step: "send", patch: { request: { url, body } } });
       const data = await sendContract(body, state.token);
-      dispatch({ type: "SET_STEP", step: "send", patch: { status: "success", response: data } });
+      dispatch({ type: "SET_STEP", step: "send", patch: { response: data } });
 
       // Polling for send
       dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [] } } });
-      const finalEvent = await poller.start<{ status: string }>(
+      const finalEvents = await poller.start<PollingEvent[]>(
         "send",
         (payload) => {
           dispatch({
@@ -377,14 +370,19 @@ export default function Page() {
                 isActive: true,
                 logs: [
                   ...(stateRef.current.steps.send.polling?.logs || []),
-                  ...(Array.isArray(payload) ? payload : [payload]),
+                  ...payload,
                 ],
               },
             },
           });
         },
-        () => getEvents<{ status: string }>({ DocumentId: state.documentId! }, state.token),
-        (p) => p.status === "completed"
+        () => getEvents<PollingEvent[]>({ DocumentId: state.documentId! }, state.token),
+        (events) =>
+          events.some(
+            (e) =>
+              e.Status === "rolled_out_success" ||
+              e.Status === "rolled_out_failed"
+          )
       );
       dispatch({
         type: "SET_STEP",
@@ -394,13 +392,23 @@ export default function Page() {
             isActive: false,
             logs: [
               ...(stateRef.current.steps.send.polling?.logs || []),
-              ...(Array.isArray(finalEvent) ? finalEvent : [finalEvent]),
+              ...finalEvents,
             ],
           },
         },
       });
 
-      setSnack("Contract sent via email.");
+      const failed = finalEvents.some((e) => e.Status === "rolled_out_failed");
+      if (failed) {
+        dispatch({
+          type: "SET_STEP",
+          step: "send",
+          patch: { status: "error", error: "Rollout failed." },
+        });
+      } else {
+        dispatch({ type: "SET_STEP", step: "send", patch: { status: "success" } });
+        setSnack("Contract sent via email.");
+      }
     } catch (e: unknown) {
       dispatch({ type: "SET_STEP", step: "send", patch: { status: "error", error: String(e) } });
     }
