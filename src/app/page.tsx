@@ -329,7 +329,10 @@ export default function Page() {
         patch: {
           polling: {
             isActive: false,
-            logs: stateRef.current.steps.prepare.polling?.logs || [],
+            logs: [
+              ...(stateRef.current.steps.prepare.polling?.logs || []),
+              ...(Array.isArray(finalEvents) ? finalEvents : [finalEvents]),
+            ],
           },
         },
       });
@@ -363,7 +366,7 @@ export default function Page() {
 
       // Polling for send
       dispatch({ type: "SET_STEP", step: "send", patch: { polling: { isActive: true, logs: [] } } });
-      await poller.start<{ status: string }>(
+      const finalEvent = await poller.start<{ status: string }>(
         "send",
         (payload) => {
           dispatch({
@@ -389,7 +392,10 @@ export default function Page() {
         patch: {
           polling: {
             isActive: false,
-            logs: stateRef.current.steps.send.polling?.logs || [],
+            logs: [
+              ...(stateRef.current.steps.send.polling?.logs || []),
+              ...(Array.isArray(finalEvent) ? finalEvent : [finalEvent]),
+            ],
           },
         },
       });
