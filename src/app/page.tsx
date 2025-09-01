@@ -412,8 +412,8 @@ export default function Page() {
         (events) =>
           events.some(
             (e) =>
-              e.Status === "rolled_out_success" ||
-              e.Status === "rolled_out_failed"
+              e.Status === "rollout_success" ||
+              e.Status === "rollout_failed"
           )
       );
       dispatch({
