@@ -18,7 +18,7 @@ function filterLogs(logs: unknown[], step?: StepKey) {
       return status.startsWith("preparation");
     }
     if (step === "send") {
-      return status.startsWith("rolled_out");
+      return status.startsWith("rollout");
     }
     return true;
   });
