@@ -427,7 +427,7 @@ export default function Page() {
         },
       });
 
-      const failed = finalEvents.some((e) => e.Status === "rolled_out_failed");
+      const failed = finalEvents.some((e) => e.Status === "rollout_failed");
       if (failed) {
         dispatch({
           type: "SET_STEP",
