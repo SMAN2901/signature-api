@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "./http";
 import { getEnv } from "../env";
 
 function buildGetUploadUrlBody(itemId: string, name: string) {

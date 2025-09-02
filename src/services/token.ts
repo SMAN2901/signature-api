@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "./http";
 import { getEnv } from "../env";
 
 export function buildTokenRequest(clientId: string, clientSecret: string) {
